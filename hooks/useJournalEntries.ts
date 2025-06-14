@@ -13,15 +13,14 @@ export function useJournalEntries() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let subscription: RealtimeChannel | null = null;
+
     if (user) {
       fetchEntries();
       
-      // Remove any existing channel with the same name before creating a new one
-      supabase.removeChannel(supabase.channel('journal_entries'));
-      
       // Set up realtime subscription
-      const subscription: RealtimeChannel = supabase
-        .channel('journal_entries')
+      subscription = supabase
+        .channel(`journal_entries_${user.id}`)
         .on(
           'postgres_changes',
           {
@@ -31,6 +30,7 @@ export function useJournalEntries() {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
+            // Use functional updates to avoid stale closure issues
             if (payload.eventType === 'INSERT') {
               setEntries(prev => [payload.new as JournalEntry, ...prev]);
             } else if (payload.eventType === 'UPDATE') {
@@ -47,19 +47,25 @@ export function useJournalEntries() {
           }
         )
         .subscribe();
-
-      return () => {
-        subscription.unsubscribe();
-        supabase.removeChannel(subscription);
-      };
     } else {
       setEntries([]);
       setLoading(false);
     }
-  }, [user]);
+
+    // Cleanup function
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
 
   const fetchEntries = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -71,11 +77,13 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error fetching entries:', error);
+        setEntries([]);
       } else {
         setEntries(data || []);
       }
     } catch (error) {
       console.error('Error in fetchEntries:', error);
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -173,11 +181,13 @@ export function useJournalEntries() {
     
     const habitCounts = thisWeekEntries.reduce((acc, entry) => {
       const habits = entry.habits as { [key: string]: boolean };
-      Object.entries(habits).forEach(([habit, completed]) => {
-        if (completed) {
-          acc[habit] = (acc[habit] || 0) + 1;
-        }
-      });
+      if (habits && typeof habits === 'object') {
+        Object.entries(habits).forEach(([habit, completed]) => {
+          if (completed) {
+            acc[habit] = (acc[habit] || 0) + 1;
+          }
+        });
+      }
       return acc;
     }, {} as { [key: string]: number });
 

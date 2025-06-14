@@ -11,67 +11,88 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     if (user) {
       fetchProfile();
     } else {
-      setProfile(null);
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, create one
-        await createProfile();
-      } else if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
+      if (mounted) {
+        setProfile(null);
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const createProfile = async () => {
-    if (!user) return;
+    async function fetchProfile() {
+      if (!user || !mounted) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          email: user.email!,
-          full_name: user.user_metadata?.full_name || null,
-          subscription_plan: 'free',
-        })
-        .select()
-        .single();
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
-        console.error('Error creating profile:', error);
-      } else {
-        setProfile(data);
+        if (error && error.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          await createProfile();
+        } else if (error) {
+          console.error('Error fetching profile:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+        } else {
+          if (mounted) {
+            setProfile(data);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchProfile:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Error in createProfile:', error);
     }
-  };
+
+    async function createProfile() {
+      if (!user || !mounted) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email!,
+            full_name: user.user_metadata?.full_name || null,
+            subscription_plan: 'free',
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating profile:', error);
+        } else {
+          if (mounted) {
+            setProfile(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error in createProfile:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]); // Only depend on user.id
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user || !profile) return;
+    if (!user || !profile) return { error: 'No user or profile found' };
 
     try {
       const { data, error } = await supabase
@@ -97,10 +118,33 @@ export function useProfile() {
     }
   };
 
+  const refetchProfile = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error refetching profile:', error);
+      } else {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error in refetchProfile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     profile,
     loading,
     updateProfile,
-    refetch: fetchProfile,
+    refetch: refetchProfile,
   };
 }
