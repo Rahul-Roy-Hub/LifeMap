@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
 import { useAuth } from './useAuth';
@@ -8,18 +8,29 @@ type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 type JournalEntryInsert = Database['public']['Tables']['journal_entries']['Insert'];
 
 export function useJournalEntries() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const subscriptionRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    let subscription: RealtimeChannel | null = null;
+    // Wait for auth to complete
+    if (authLoading) {
+      return;
+    }
 
-    if (user) {
+    // Clean up any existing subscription
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+
+    if (user?.id) {
       fetchEntries();
       
       // Set up realtime subscription
-      subscription = supabase
+      const channel = supabase
         .channel(`journal_entries_${user.id}`)
         .on(
           'postgres_changes',
@@ -47,6 +58,8 @@ export function useJournalEntries() {
           }
         )
         .subscribe();
+
+      subscriptionRef.current = channel;
     } else {
       setEntries([]);
       setLoading(false);
@@ -54,15 +67,16 @@ export function useJournalEntries() {
 
     // Cleanup function
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-        supabase.removeChannel(subscription);
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
       }
     };
-  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
+  }, [user?.id, authLoading]); // Include authLoading in dependencies
 
   const fetchEntries = async () => {
-    if (!user) {
+    if (!user?.id) {
       setLoading(false);
       return;
     }
@@ -90,7 +104,7 @@ export function useJournalEntries() {
   };
 
   const addEntry = async (entryData: Omit<JournalEntryInsert, 'user_id'>) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: 'User not authenticated' };
 
     try {
       const { data, error } = await supabase
@@ -115,7 +129,7 @@ export function useJournalEntries() {
   };
 
   const updateEntry = async (id: string, updates: Partial<JournalEntry>) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: 'User not authenticated' };
 
     try {
       const { data, error } = await supabase
@@ -142,7 +156,7 @@ export function useJournalEntries() {
   };
 
   const deleteEntry = async (id: string) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: 'User not authenticated' };
 
     try {
       const { error } = await supabase

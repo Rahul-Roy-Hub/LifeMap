@@ -12,34 +12,61 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     const fetchSummary = async () => {
+      // Wait for auth to complete and ensure user exists with valid ID
+      if (authLoading || !user?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
+        setError(null);
         const botpressService = BotpressService.getInstance();
         const result = await botpressService.generateWeeklySummary(
-          user?.id || '',
+          user.id,
           startDate,
           endDate
         );
         setSummary(result);
       } catch (err) {
         setError('Failed to generate weekly summary');
-        console.error(err);
+        console.error('Error generating weekly summary:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSummary();
-  }, [startDate, endDate, user?.id]);
+  }, [startDate, endDate, user?.id, authLoading]);
+
+  // Show loading while auth is loading
+  if (authLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Show message if no user is authenticated
+  if (!user?.id) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Please log in to view your weekly summary</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Generating weekly summary...</Text>
       </View>
     );
   }
@@ -61,7 +88,7 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
 
       <View style={styles.section}>
         <Text style={styles.title}>Key Insights</Text>
-        {summary?.insights.map((insight: string, index: number) => (
+        {summary?.insights?.map((insight: string, index: number) => (
           <Text key={index} style={styles.insight}>
             • {insight}
           </Text>
@@ -70,11 +97,11 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
 
       <View style={styles.section}>
         <Text style={styles.title}>Mood Analysis</Text>
-        <Text style={styles.subtitle}>Average Mood: {summary?.moodAnalysis.averageMood}/10</Text>
-        <Text style={styles.subtitle}>Trend: {summary?.moodAnalysis.moodTrend}</Text>
+        <Text style={styles.subtitle}>Average Mood: {summary?.moodAnalysis?.averageMood}/10</Text>
+        <Text style={styles.subtitle}>Trend: {summary?.moodAnalysis?.moodTrend}</Text>
         
         <Text style={styles.subtitle}>Suggestions:</Text>
-        {summary?.moodAnalysis.suggestions.map((suggestion: string, index: number) => (
+        {summary?.moodAnalysis?.suggestions?.map((suggestion: string, index: number) => (
           <Text key={index} style={styles.suggestion}>
             • {suggestion}
           </Text>
@@ -128,4 +155,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-}); 
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
+    color: '#666',
+  },
+});
