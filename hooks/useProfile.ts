@@ -72,14 +72,18 @@ export function useProfile() {
 
         if (error) {
           console.error('Error creating profile:', error);
+          // If profile creation fails, still set loading to false
+          if (mounted) {
+            setLoading(false);
+          }
         } else {
           if (mounted) {
             setProfile(data);
+            setLoading(false);
           }
         }
       } catch (error) {
         console.error('Error in createProfile:', error);
-      } finally {
         if (mounted) {
           setLoading(false);
         }
@@ -92,7 +96,7 @@ export function useProfile() {
   }, [user?.id]); // Only depend on user.id
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user || !profile) return { error: 'No user or profile found' };
+    if (!user || !profile) return { error: new Error('No user or profile found') };
 
     try {
       const { data, error } = await supabase
@@ -107,14 +111,14 @@ export function useProfile() {
 
       if (error) {
         console.error('Error updating profile:', error);
-        return { error };
+        return { error: new Error('Failed to update profile') };
       } else {
         setProfile(data);
         return { data };
       }
     } catch (error) {
       console.error('Error in updateProfile:', error);
-      return { error };
+      return { error: new Error('Failed to update profile') };
     }
   };
 

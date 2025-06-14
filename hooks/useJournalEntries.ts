@@ -104,7 +104,7 @@ export function useJournalEntries() {
   };
 
   const addEntry = async (entryData: Omit<JournalEntryInsert, 'user_id'>) => {
-    if (!user?.id) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: new Error('User not authenticated') };
 
     try {
       const { data, error } = await supabase
@@ -118,18 +118,18 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error adding entry:', error);
-        return { error };
+        return { error: new Error('Failed to add entry') };
       }
 
       return { data };
     } catch (error) {
       console.error('Error in addEntry:', error);
-      return { error };
+      return { error: new Error('Failed to add entry') };
     }
   };
 
   const updateEntry = async (id: string, updates: Partial<JournalEntry>) => {
-    if (!user?.id) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: new Error('User not authenticated') };
 
     try {
       const { data, error } = await supabase
@@ -145,18 +145,18 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error updating entry:', error);
-        return { error };
+        return { error: new Error('Failed to update entry') };
       }
 
       return { data };
     } catch (error) {
       console.error('Error in updateEntry:', error);
-      return { error };
+      return { error: new Error('Failed to update entry') };
     }
   };
 
   const deleteEntry = async (id: string) => {
-    if (!user?.id) return { error: 'User not authenticated' };
+    if (!user?.id) return { error: new Error('User not authenticated') };
 
     try {
       const { error } = await supabase
@@ -167,13 +167,13 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error deleting entry:', error);
-        return { error };
+        return { error: new Error('Failed to delete entry') };
       }
 
       return { success: true };
     } catch (error) {
       console.error('Error in deleteEntry:', error);
-      return { error };
+      return { error: new Error('Failed to delete entry') };
     }
   };
 
