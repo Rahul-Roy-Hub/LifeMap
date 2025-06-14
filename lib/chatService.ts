@@ -7,9 +7,13 @@ interface ChatMessage {
 
 export class ChatService {
   private static instance: ChatService;
-  private readonly WEBHOOK_URL = 'https://webhook.botpress.cloud/5f58b70b-632a-4a5b-b1ce-c05709184f9f';
+  private readonly WEBHOOK_URL = process.env.EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL;
 
-  private constructor() {}
+  private constructor() {
+    if (!this.WEBHOOK_URL) {
+      console.error('Botpress webhook URL is not configured. Please set EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL in your environment variables.');
+    }
+  }
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -19,6 +23,10 @@ export class ChatService {
   }
 
   async sendMessage(userMessage: string): Promise<ChatMessage> {
+    if (!this.WEBHOOK_URL) {
+      throw new Error('Botpress webhook URL is not configured');
+    }
+
     try {
       const response = await fetch(this.WEBHOOK_URL, {
         method: 'POST',
