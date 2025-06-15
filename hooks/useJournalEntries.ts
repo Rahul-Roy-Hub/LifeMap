@@ -6,6 +6,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 type JournalEntryInsert = Database['public']['Tables']['journal_entries']['Insert'];
+type JournalEntryUpdate = Database['public']['Tables']['journal_entries']['Update'];
 
 export function useJournalEntries() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export function useJournalEntries() {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
+            console.log('Realtime update:', payload);
             if (payload.eventType === 'INSERT') {
               setEntries(prev => [payload.new as JournalEntry, ...prev]);
             } else if (payload.eventType === 'UPDATE') {
@@ -63,6 +65,8 @@ export function useJournalEntries() {
 
     try {
       setLoading(true);
+      console.log('Fetching entries for user:', user.id);
+      
       const { data, error } = await supabase
         .from('journal_entries')
         .select('*')
@@ -72,6 +76,7 @@ export function useJournalEntries() {
       if (error) {
         console.error('Error fetching entries:', error);
       } else {
+        console.log('Fetched entries:', data?.length || 0);
         setEntries(data || []);
       }
     } catch (error) {
@@ -82,9 +87,14 @@ export function useJournalEntries() {
   };
 
   const addEntry = async (entryData: Omit<JournalEntryInsert, 'user_id'>) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user) {
+      console.error('No user found for addEntry');
+      return { error: 'User not authenticated' };
+    }
 
     try {
+      console.log('Adding entry:', entryData);
+      
       const { data, error } = await supabase
         .from('journal_entries')
         .insert({
@@ -96,20 +106,26 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error adding entry:', error);
-        return { error };
+        return { error: error.message };
       }
 
+      console.log('Entry added successfully:', data);
       return { data };
     } catch (error) {
       console.error('Error in addEntry:', error);
-      return { error };
+      return { error: 'Failed to add entry' };
     }
   };
 
-  const updateEntry = async (id: string, updates: Partial<JournalEntry>) => {
-    if (!user) return { error: 'User not authenticated' };
+  const updateEntry = async (id: string, updates: Partial<JournalEntryUpdate>) => {
+    if (!user) {
+      console.error('No user found for updateEntry');
+      return { error: 'User not authenticated' };
+    }
 
     try {
+      console.log('Updating entry:', id, updates);
+      
       const { data, error } = await supabase
         .from('journal_entries')
         .update({
@@ -123,13 +139,14 @@ export function useJournalEntries() {
 
       if (error) {
         console.error('Error updating entry:', error);
-        return { error };
+        return { error: error.message };
       }
 
+      console.log('Entry updated successfully:', data);
       return { data };
     } catch (error) {
       console.error('Error in updateEntry:', error);
-      return { error };
+      return { error: 'Failed to update entry' };
     }
   };
 
@@ -173,11 +190,13 @@ export function useJournalEntries() {
     
     const habitCounts = thisWeekEntries.reduce((acc, entry) => {
       const habits = entry.habits as { [key: string]: boolean };
-      Object.entries(habits).forEach(([habit, completed]) => {
-        if (completed) {
-          acc[habit] = (acc[habit] || 0) + 1;
-        }
-      });
+      if (habits && typeof habits === 'object') {
+        Object.entries(habits).forEach(([habit, completed]) => {
+          if (completed) {
+            acc[habit] = (acc[habit] || 0) + 1;
+          }
+        });
+      }
       return acc;
     }, {} as { [key: string]: number });
 

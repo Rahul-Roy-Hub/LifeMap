@@ -10,6 +10,8 @@ export interface UserSubscription {
   plan: 'free' | 'pro';
   entriesThisWeek: number;
   maxEntriesPerWeek: number;
+  entriesThisMonth: number;
+  maxEntriesPerMonth: number;
   customDomain?: string;
 }
 
@@ -25,6 +27,13 @@ interface UserContextType {
     decision: string;
     habits: { [key: string]: boolean };
   }) => Promise<any>;
+  updateEntry: (id: string, entry: {
+    mood: number;
+    moodEmoji: string;
+    decision: string;
+    habits: { [key: string]: boolean };
+  }) => Promise<any>;
+  getTodaysEntry: () => JournalEntry | null;
   updateSubscription: (plan: 'free' | 'pro') => Promise<any>;
   setCustomDomain: (domain: string) => Promise<any>;
   getWeeklySummary: () => string;
@@ -34,7 +43,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const { profile, updateProfile, loading: authLoading } = useAuthContext();
-  const { entries, addEntry: addJournalEntry, getWeeklySummary, loading: entriesLoading } = useJournalEntries();
+  const { entries, addEntry: addJournalEntry, updateEntry: updateJournalEntry, getWeeklySummary, loading: entriesLoading } = useJournalEntries();
 
   const loading = authLoading || entriesLoading;
 
@@ -47,10 +56,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     new Date(entry.created_at) >= startOfWeek
   );
 
+  // Calculate entries this month
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const thisMonthEntries = entries.filter(entry => 
+    new Date(entry.created_at) >= startOfMonth
+  );
+
   const subscription: UserSubscription = {
     plan: profile?.subscription_plan || 'free',
     entriesThisWeek: thisWeekEntries.length,
-    maxEntriesPerWeek: profile?.subscription_plan === 'pro' ? 999 : 3,
+    maxEntriesPerWeek: 999, // Unlimited for all users now
+    entriesThisMonth: thisMonthEntries.length,
+    maxEntriesPerMonth: 30, // Both free and pro users get 30 entries per month
     customDomain: profile?.custom_domain || undefined,
   };
 
@@ -68,6 +85,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       decision: entryData.decision,
       habits: entryData.habits,
     });
+  };
+
+  const updateEntry = async (id: string, entryData: {
+    mood: number;
+    moodEmoji: string;
+    decision: string;
+    habits: { [key: string]: boolean };
+  }) => {
+    return await updateJournalEntry(id, {
+      mood: entryData.mood,
+      mood_emoji: entryData.moodEmoji,
+      decision: entryData.decision,
+      habits: entryData.habits,
+    });
+  };
+
+  const getTodaysEntry = (): JournalEntry | null => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    return entries.find(entry => entry.date === today) || null;
   };
 
   const updateSubscription = async (plan: 'free' | 'pro') => {
@@ -93,6 +129,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       addEntry,
+      updateEntry,
+      getTodaysEntry,
       updateSubscription,
       setCustomDomain,
       getWeeklySummary,

@@ -11,15 +11,15 @@ const { width } = Dimensions.get('window');
 
 const features = [
   {
-    icon: <Target size={20} color="#10b981" />,
-    title: 'Unlimited Entries',
-    description: 'Journal as much as you want, no weekly limits',
-    highlight: true,
-  },
-  {
     icon: <Sparkles size={20} color="#8b5cf6" />,
     title: 'AI Weekly Summaries',
     description: 'Get personalized insights and growth recommendations',
+    highlight: true,
+  },
+  {
+    icon: <Target size={20} color="#10b981" />,
+    title: 'AI Feedback & Coaching',
+    description: 'Receive intelligent feedback on your journal entries',
     highlight: true,
   },
   {
@@ -147,7 +147,7 @@ export default function PaywallContent() {
                 </Animated.View>
                 <Text style={[styles.heroTitle, isTablet && styles.heroTitleTablet]}>Unlock Your Full Potential</Text>
                 <Text style={[styles.heroSubtitle, isTablet && styles.heroSubtitleTablet]}>
-                  Upgrade to LifeMap Pro and accelerate your personal growth journey
+                  Upgrade to LifeMap Pro and get AI-powered insights for your personal growth journey
                 </Text>
                 
                 {/* Social proof badges */}
@@ -184,16 +184,16 @@ export default function PaywallContent() {
                 </View>
               </View>
               <Text style={[styles.currentPlanText, isTablet && styles.currentPlanTextTablet]}>
-                {subscription.entriesThisWeek}/{subscription.maxEntriesPerWeek} entries used this week
+                {subscription.entriesThisMonth}/{subscription.maxEntriesPerMonth} entries used this month
               </Text>
               <View style={[styles.progressBar, isTablet && styles.progressBarTablet]}>
                 <View style={[
                   styles.progressFill,
-                  { width: `${(subscription.entriesThisWeek / subscription.maxEntriesPerWeek) * 100}%` }
+                  { width: `${(subscription.entriesThisMonth / subscription.maxEntriesPerMonth) * 100}%` }
                 ]} />
               </View>
               <Text style={[styles.progressText, isTablet && styles.progressTextTablet]}>
-                {subscription.maxEntriesPerWeek - subscription.entriesThisWeek} entries remaining
+                {subscription.maxEntriesPerMonth - subscription.entriesThisMonth} entries remaining this month
               </Text>
             </LinearGradient>
           </Animated.View>
@@ -266,7 +266,7 @@ export default function PaywallContent() {
                   Cancel anytime • 7-day free trial included
                 </Text>
                 <View style={[styles.savingsBadge, isTablet && styles.savingsBadgeTablet]}>
-                  <Text style={[styles.savingsText, isTablet && styles.savingsTextTablet]}>Save 40% vs weekly entries</Text>
+                  <Text style={[styles.savingsText, isTablet && styles.savingsTextTablet]}>Same 30 monthly entries + AI insights</Text>
                 </View>
               </View>
 
@@ -277,11 +277,11 @@ export default function PaywallContent() {
                   <View style={styles.valuePoints}>
                     <View style={styles.valuePoint}>
                       <Check size={16} color="#10b981" />
-                      <Text style={styles.valuePointText}>Unlimited journaling freedom</Text>
+                      <Text style={styles.valuePointText}>AI-powered weekly summaries</Text>
                     </View>
                     <View style={styles.valuePoint}>
                       <Check size={16} color="#10b981" />
-                      <Text style={styles.valuePointText}>AI-powered personal insights</Text>
+                      <Text style={styles.valuePointText}>Intelligent feedback on entries</Text>
                     </View>
                     <View style={styles.valuePoint}>
                       <Check size={16} color="#10b981" />

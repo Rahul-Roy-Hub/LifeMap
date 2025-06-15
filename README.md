@@ -2,7 +2,7 @@
 
 A beautiful, feature-rich journaling app built with Expo and Supabase that helps users track their personal growth journey through daily reflections, mood tracking, and habit building.
 
-## Features
+## 🌟 Features
 
 ### 🔐 Authentication
 - Email/password authentication via Supabase Auth
@@ -13,6 +13,7 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 - Daily journal entries with mood tracking
 - Habit tracking and progress visualization
 - Rich text input with prompts for reflection
+- Edit existing entries anytime
 - Responsive design for mobile and tablet
 
 ### 📊 Analytics & Insights
@@ -22,8 +23,8 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 - AI-powered insights (Pro feature)
 
 ### 💎 Subscription Management
-- Free tier with limited entries (3 per week)
-- Pro tier with unlimited entries and premium features
+- Free tier with 30 entries per month
+- Pro tier with AI insights and premium features
 - Custom domain support for Pro users
 - RevenueCat integration ready
 
@@ -33,7 +34,7 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 - Responsive layout for all screen sizes
 - Micro-interactions and haptic feedback
 
-## Tech Stack
+## 🚀 Tech Stack
 
 - **Frontend**: React Native with Expo
 - **Backend**: Supabase (Database, Auth, Realtime)
@@ -43,7 +44,11 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 - **Icons**: Lucide React Native
 - **Fonts**: Inter (Google Fonts)
 
-## Getting Started
+## 📱 Screenshots
+
+*Add screenshots of your app here*
+
+## 🛠️ Getting Started
 
 ### Prerequisites
 
@@ -55,7 +60,7 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/yourusername/lifemap-journaling-app.git
 cd lifemap-journaling-app
 ```
 
@@ -67,7 +72,12 @@ npm install
 3. Set up Supabase:
    - Create a new Supabase project
    - Copy your project URL and anon key
-   - Update `.env` with your Supabase credentials
+   - Create a `.env` file with your Supabase credentials:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
 4. Set up the database:
    - Run the SQL migrations in your Supabase dashboard
@@ -78,7 +88,7 @@ npm install
 npm run dev
 ```
 
-## Database Schema
+## 📊 Database Schema
 
 ### Profiles Table
 ```sql
@@ -109,16 +119,7 @@ CREATE TABLE journal_entries (
 );
 ```
 
-## Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 ├── app/                    # Expo Router pages
@@ -144,7 +145,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
     └── env.d.ts          # Environment types
 ```
 
-## Key Features Implementation
+## 🔑 Key Features Implementation
 
 ### Authentication Flow
 - Automatic session management with Supabase Auth
@@ -162,11 +163,11 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - Adaptive components for different screen sizes
 
 ### Subscription Management
-- Free tier limitations
-- Pro feature gating
+- Free tier with 30 entries per month
+- Pro feature gating with AI insights
 - Custom domain support for Pro users
 
-## Deployment
+## 🚀 Deployment
 
 ### Web Deployment
 ```bash
@@ -180,18 +181,26 @@ npm run build:web
 eas build --platform all
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## 📞 Support
 
 For support, email support@lifemap.app or join our Discord community.
+
+## 🙏 Acknowledgments
+
+- Built with [Expo](https://expo.dev/)
+- Backend powered by [Supabase](https://supabase.com/)
+- Icons by [Lucide](https://lucide.dev/)
+- Fonts by [Google Fonts](https://fonts.google.com/)

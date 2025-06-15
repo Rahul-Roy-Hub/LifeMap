@@ -26,6 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loading = auth.loading || profileLoading;
 
+  // Enhanced signOut that clears all state
+  const enhancedSignOut = async () => {
+    try {
+      const result = await auth.signOut();
+      
+      // Force a small delay to ensure state propagation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return result;
+    } catch (error) {
+      console.error('Enhanced sign out error:', error);
+      return { error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -33,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         loading,
         updateProfile,
+        signOut: enhancedSignOut,
       }}
     >
       {children}

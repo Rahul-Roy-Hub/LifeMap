@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Target, Lightbulb, Heart } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useUser } from '@/components/UserContext';
@@ -41,7 +41,7 @@ const formatDateForDatabase = (date: Date): string => {
 };
 
 export default function EntryContent() {
-  const { addEntry, subscription, entries } = useUser();
+  const { addEntry, updateEntry, getTodaysEntry } = useUser();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [decision, setDecision] = useState('');
   const [habits, setHabits] = useState<{ [key: string]: boolean }>({
@@ -53,13 +53,31 @@ export default function EntryContent() {
     'Gratitude': false,
   });
   const [currentPrompt] = useState(journalPrompts[Math.floor(Math.random() * journalPrompts.length)]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const progressValue = useSharedValue(0);
   const selectedMoodData = moodOptions.find(mood => mood.value === selectedMood);
 
-  // Check if entry already exists for today
-  const todayDateString = formatDateForDatabase(new Date());
-  const todaysEntry = entries.find(entry => entry.date === todayDateString);
+  // Get today's entry
+  const todaysEntry = getTodaysEntry();
+  const isEditing = !!todaysEntry;
+
+  // Initialize form with existing entry data if editing
+  useEffect(() => {
+    if (todaysEntry) {
+      setSelectedMood(todaysEntry.mood);
+      setDecision(todaysEntry.decision);
+      
+      // Parse habits safely
+      const entryHabits = todaysEntry.habits as { [key: string]: boolean } | null;
+      if (entryHabits && typeof entryHabits === 'object') {
+        setHabits(prev => ({
+          ...prev,
+          ...entryHabits
+        }));
+      }
+    }
+  }, [todaysEntry]);
 
   // Haptic feedback function
   const triggerHapticFeedback = () => {
@@ -83,29 +101,65 @@ export default function EntryContent() {
     setSelectedMood(moodValue);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedMood || !decision.trim()) {
       Alert.alert('Missing Information', 'Please select your mood and write about your day.');
       return;
     }
 
-    // Check if entry already exists for today
-    if (todaysEntry) {
-      Alert.alert('Entry Already Exists', 'You have already created an entry for today. You can only create one entry per day.');
-      return;
+    setIsSaving(true);
+
+    try {
+      const entryData = {
+        mood: selectedMood,
+        moodEmoji: selectedMoodData?.emoji || '😐',
+        decision: decision.trim(),
+        habits: habits,
+      };
+
+      let result;
+      
+      if (isEditing && todaysEntry) {
+        // Update existing entry
+        console.log('Updating existing entry:', todaysEntry.id);
+        result = await updateEntry(todaysEntry.id, entryData);
+      } else {
+        // Create new entry
+        console.log('Creating new entry for today');
+        const todayDateString = formatDateForDatabase(new Date());
+        result = await addEntry({
+          date: todayDateString,
+          ...entryData,
+        });
+      }
+
+      if (result.error) {
+        console.error('Save error:', result.error);
+        Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'save'} entry: ${result.error}`);
+      } else {
+        console.log('Entry saved successfully:', result.data);
+        
+        // Show success message and navigate back
+        Alert.alert(
+          'Success!', 
+          `Your journal entry has been ${isEditing ? 'updated' : 'saved'} successfully!`, 
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                // Navigate back to the home screen (tabs)
+                router.replace('/(tabs)');
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Unexpected error saving entry:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
-
-    addEntry({
-      date: todayDateString,
-      mood: selectedMood,
-      moodEmoji: selectedMoodData?.emoji || '😐',
-      decision: decision.trim(),
-      habits: habits,
-    });
-
-    Alert.alert('Entry Saved', 'Your journal entry has been saved successfully!', [
-      { text: 'OK', onPress: () => router.back() }
-    ]);
   };
 
   const completedHabits = Object.values(habits).filter(Boolean).length;
@@ -475,7 +529,7 @@ export default function EntryContent() {
                 isTablet && styles.headerTitleTablet,
                 isLargeTablet && styles.headerTitleLargeTablet
               ]}>
-                Daily Reflection
+                {isEditing ? 'Edit Reflection' : 'Daily Reflection'}
               </Text>
               <Text style={[
                 styles.headerSubtitle, 
@@ -494,8 +548,10 @@ export default function EntryContent() {
               style={[
                 styles.saveButton, 
                 isTablet && styles.buttonTablet,
-                isLargeTablet && styles.buttonLargeTablet
+                isLargeTablet && styles.buttonLargeTablet,
+                isSaving && styles.saveButtonDisabled
               ]}
+              disabled={isSaving}
             >
               <Check size={isLargeTablet ? 32 : isTablet ? 28 : 24} color="#ffffff" />
             </TouchableOpacity>
@@ -886,12 +942,14 @@ export default function EntryContent() {
               styles.saveButtonLarge,
               isTablet && styles.saveButtonLargeTablet,
               isLargeTablet && styles.saveButtonLargeLargeTablet,
-              (selectedMood && decision.trim()) && styles.saveButtonActive
+              selectedMood && decision.trim() ? styles.saveButtonActive : null,
+              isSaving && styles.saveButtonDisabled
             ]} 
             onPress={handleSave}
+            disabled={isSaving}
           >
             <LinearGradient
-              colors={(selectedMood && decision.trim()) ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
+              colors={(selectedMood && decision.trim()) && !isSaving ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
               style={[
                 styles.saveButtonGradient, 
                 isTablet && styles.saveButtonGradientTablet,
@@ -904,7 +962,7 @@ export default function EntryContent() {
                 isTablet && styles.saveButtonTextTablet,
                 isLargeTablet && styles.saveButtonTextLargeTablet
               ]}>
-                Save Entry
+                {isSaving ? 'Saving...' : isEditing ? 'Update Entry' : 'Save Entry'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -998,6 +1056,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   progressContainer: {
     paddingHorizontal: 24,
@@ -1185,6 +1246,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     width: '100%',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   
   // Tablet mood styles
@@ -1217,22 +1279,34 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.02 }],
   },
   
-  // Emoji styles for different screen sizes
+  // Updated emoji styles for better cross-platform compatibility
   moodEmojiSmall: {
     fontSize: 24,
     marginBottom: 4,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   moodEmojiMedium: {
     fontSize: 28,
     marginBottom: 6,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   moodEmojiTablet: {
     fontSize: 48,
     marginBottom: 12,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   moodEmojiLargeTablet: {
     fontSize: 64,
     marginBottom: 16,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   
   // Label styles for different screen sizes
@@ -1455,6 +1529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    overflow: 'hidden',
   },
   habitIconTablet: {
     width: 56,
@@ -1470,12 +1545,21 @@ const styles = StyleSheet.create({
   },
   habitEmoji: {
     fontSize: 20,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   habitEmojiTablet: {
     fontSize: 24,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   habitEmojiLargeTablet: {
     fontSize: 28,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   habitInfo: {
     flex: 1,
@@ -1611,14 +1695,23 @@ const styles = StyleSheet.create({
   summaryItemIcon: {
     fontSize: 16,
     marginRight: 8,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   summaryItemIconTablet: {
     fontSize: 20,
     marginRight: 12,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   summaryItemIconLargeTablet: {
     fontSize: 24,
     marginRight: 16,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   summaryItemText: {
     fontSize: 14,

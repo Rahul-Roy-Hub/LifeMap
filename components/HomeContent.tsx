@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Heart, Target, TrendingUp, Calendar, Sparkles, ArrowRight, Zap, Award, Activity, User } from 'lucide-react-native';
+import { Plus, Heart, Target, TrendingUp, Calendar, Sparkles, ArrowRight, Zap, Award, Activity, User, CreditCard as Edit } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useUser } from '@/components/UserContext';
 import { useAuthContext } from '@/components/AuthProvider';
@@ -42,14 +42,12 @@ const gradientColors = {
 };
 
 export default function HomeContent() {
-  const { subscription, entries, getWeeklySummary } = useUser();
+  const { subscription, entries, getWeeklySummary, getTodaysEntry } = useUser();
   const { profile } = useAuthContext();
   
-  const canAddEntry = subscription.entriesThisWeek < subscription.maxEntriesPerWeek;
-  
-  // Fix the today's entry check to use consistent date formatting
-  const todayDateString = formatDateForDatabase(new Date());
-  const todaysEntry = entries.find(entry => entry.date === todayDateString);
+  // Get today's entry
+  const todaysEntry = getTodaysEntry();
+  const hasEntryToday = !!todaysEntry;
 
   // Animated values for micro-interactions
   const pulseValue = useSharedValue(1);
@@ -79,15 +77,8 @@ export default function HomeContent() {
     transform: [{ rotate: `${sparkleRotation.value}deg` }],
   }));
 
-  const handleAddEntry = () => {
-    if (!canAddEntry && subscription.plan === 'free') {
-      router.push('/paywall');
-    } else if (todaysEntry) {
-      // If entry already exists for today, show a message or navigate to view/edit
-      alert('You have already created an entry for today. You can only create one entry per day.');
-    } else {
-      router.push('/entry');
-    }
+  const handleEntryAction = () => {
+    router.push('/entry');
   };
 
   const getAverageMood = (): number => {
@@ -123,8 +114,11 @@ export default function HomeContent() {
     const streak = getStreakCount();
     const avgMood = getAverageMood();
     
-    if (streak >= 7) return "Amazing streak! You're building incredible habits 🔥";
-    if (streak >= 3) return "Great momentum! Keep the streak alive ⭐";
+    if (hasEntryToday) {
+      return "Great job on today's reflection! You can edit it anytime. ✨";
+    }
+    if (streak >= 7) return "Amazing streak! Time for today's reflection 🔥";
+    if (streak >= 3) return "Great momentum! Don't break the streak ⭐";
     if (avgMood >= 4) return "Your positive energy is inspiring! ✨";
     if (entries.length === 0) return "Welcome to your growth journey! 🌱";
     return "Every entry is a step forward. You've got this! 💪";
@@ -238,7 +232,7 @@ export default function HomeContent() {
 
         {/* Today's Entry Card with Enhanced Design */}
         <Animated.View entering={FadeInDown.delay(200)} style={styles.entryCardContainer}>
-          {todaysEntry ? (
+          {hasEntryToday ? (
             <View style={styles.entryCard}>
               <LinearGradient
                 colors={['#ffffff', '#f8fafc']}
@@ -249,9 +243,13 @@ export default function HomeContent() {
                     <Calendar size={20} color="#667eea" />
                     <Text style={styles.cardTitle}>Today's Reflection</Text>
                   </View>
-                  <View style={styles.completedBadge}>
-                    <Text style={styles.completedBadgeText}>✓ Complete</Text>
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.editButton}
+                    onPress={handleEntryAction}
+                  >
+                    <Edit size={16} color="#667eea" />
+                    <Text style={styles.editButtonText}>Edit</Text>
+                  </TouchableOpacity>
                 </View>
                 
                 <View style={styles.entryPreview}>
@@ -283,7 +281,7 @@ export default function HomeContent() {
                       </Text>
                       <View style={styles.habitSummary}>
                         <Text style={styles.habitSummaryText}>
-                          {Object.values(todaysEntry.habits).filter(Boolean).length} habits completed
+                          {Object.values(parseHabits(todaysEntry.habits)).filter(Boolean).length} habits completed
                         </Text>
                       </View>
                     </View>
@@ -293,9 +291,9 @@ export default function HomeContent() {
             </View>
           ) : (
             <Animated.View style={pulseStyle}>
-              <TouchableOpacity style={styles.addEntryCard} onPress={handleAddEntry}>
+              <TouchableOpacity style={styles.addEntryCard} onPress={handleEntryAction}>
                 <LinearGradient
-                  colors={canAddEntry ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
+                  colors={['#667eea', '#764ba2']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.addEntryGradient}
@@ -303,14 +301,9 @@ export default function HomeContent() {
                   <View style={styles.addEntryIcon}>
                     <Plus size={32} color="#ffffff" />
                   </View>
-                  <Text style={styles.addEntryText}>
-                    {canAddEntry ? "Start Today's Entry" : "Upgrade for More Entries"}
-                  </Text>
+                  <Text style={styles.addEntryText}>Start Today's Entry</Text>
                   <Text style={styles.addEntrySubtext}>
-                    {subscription.plan === 'free' 
-                      ? `${subscription.entriesThisWeek}/${subscription.maxEntriesPerWeek} entries this week`
-                      : 'Unlimited entries available'
-                    }
+                    Create your daily reflection and track your growth
                   </Text>
                   <ArrowRight size={20} color="#ffffff" style={styles.addEntryArrow} />
                 </LinearGradient>
@@ -507,7 +500,7 @@ export default function HomeContent() {
               <Text style={styles.emptyStateText}>
                 Begin documenting your thoughts, decisions, and growth. Every entry is a step toward better self-awareness.
               </Text>
-              <TouchableOpacity style={styles.emptyStateButton} onPress={handleAddEntry}>
+              <TouchableOpacity style={styles.emptyStateButton} onPress={handleEntryAction}>
                 <LinearGradient
                   colors={['#667eea', '#764ba2']}
                   style={styles.emptyStateButtonGradient}
@@ -529,7 +522,6 @@ function getTimeOfDay(): string {
   if (hour < 17) return 'Afternoon';
   return 'Evening';
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -670,16 +662,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#1e293b',
   },
-  completedBadge: {
-    backgroundColor: '#dcfce7',
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 4,
   },
-  completedBadgeText: {
-    fontSize: 12,
+  editButtonText: {
+    fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#16a34a',
+    color: '#667eea',
   },
   entryPreview: {
     flexDirection: 'row',

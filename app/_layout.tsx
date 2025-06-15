@@ -48,10 +48,11 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="entry" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="entry" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="profile-edit" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="+not-found" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </AuthProvider>

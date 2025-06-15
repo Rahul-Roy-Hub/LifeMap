@@ -15,6 +15,7 @@ export default function SettingsContent() {
   const { profile, signOut } = useAuthContext();
   const [customDomainInput, setCustomDomainInput] = useState(subscription.customDomain || '');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleDomainSave = async () => {
     if (subscription.plan !== 'pro') {
@@ -38,12 +39,31 @@ export default function SettingsContent() {
       'Are you sure you want to sign out? Your data will be saved.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: async () => {
-          const { error } = await signOut();
-          if (error) {
-            Alert.alert('Error', 'Failed to sign out');
+        { 
+          text: 'Sign Out', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              setIsSigningOut(true);
+              console.log('Starting sign out process...');
+              
+              const { error } = await signOut();
+              
+              if (error) {
+                console.error('Sign out error:', error);
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
+              } else {
+                console.log('Sign out successful');
+                // The auth state change should automatically redirect to login
+              }
+            } catch (error) {
+              console.error('Unexpected sign out error:', error);
+              Alert.alert('Error', 'An unexpected error occurred while signing out.');
+            } finally {
+              setIsSigningOut(false);
+            }
           }
-        }}
+        }
       ]
     );
   };
@@ -313,13 +333,19 @@ export default function SettingsContent() {
 
         {/* Enhanced Danger Zone */}
         <Animated.View entering={FadeInDown.delay(600)} style={styles.section}>
-          <TouchableOpacity style={styles.dangerButton} onPress={handleSignOut}>
+          <TouchableOpacity 
+            style={[styles.dangerButton, isSigningOut && styles.dangerButtonDisabled]} 
+            onPress={handleSignOut}
+            disabled={isSigningOut}
+          >
             <View style={styles.dangerButtonContent}>
               <View style={styles.dangerIcon}>
                 <LogOut size={20} color="#ef4444" />
               </View>
               <View>
-                <Text style={styles.dangerButtonText}>Sign Out</Text>
+                <Text style={styles.dangerButtonText}>
+                  {isSigningOut ? 'Signing Out...' : 'Sign Out'}
+                </Text>
                 <Text style={styles.dangerButtonSubtext}>Your data will be saved</Text>
               </View>
             </View>
@@ -709,6 +735,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  dangerButtonDisabled: {
+    opacity: 0.6,
   },
   dangerButtonContent: {
     flexDirection: 'row',

@@ -69,18 +69,16 @@ export default function DashboardContent() {
             </View>
             <Text style={styles.subscriptionText}>
               {subscription.plan === 'pro' 
-                ? 'Unlimited entries • AI insights • Custom domains'
-                : `${subscription.entriesThisWeek}/${subscription.maxEntriesPerWeek} entries this week`
+                ? `${subscription.entriesThisMonth}/${subscription.maxEntriesPerMonth} entries this month • AI insights • Custom domains`
+                : `${subscription.entriesThisMonth}/${subscription.maxEntriesPerMonth} entries this month • 1 daily entry (editable)`
               }
             </Text>
-            {subscription.plan === 'free' && (
-              <View style={styles.usageBar}>
-                <View style={[
-                  styles.usageBarFill,
-                  { width: `${(subscription.entriesThisWeek / subscription.maxEntriesPerWeek) * 100}%` }
-                ]} />
-              </View>
-            )}
+            <View style={styles.usageBar}>
+              <View style={[
+                styles.usageBarFill,
+                { width: `${Math.min((subscription.entriesThisMonth / subscription.maxEntriesPerMonth) * 100, 100)}%` }
+              ]} />
+            </View>
           </LinearGradient>
         </Animated.View>
 
@@ -257,14 +255,14 @@ export default function DashboardContent() {
               >
                 <View style={styles.entryDate}>
                   <Text style={styles.entryDateDay}>
-                    {new Date(entry.createdAt).getDate()}
+                    {new Date(entry.created_at).getDate()}
                   </Text>
                   <Text style={styles.entryDateMonth}>
-                    {new Date(entry.createdAt).toLocaleDateString('en-US', { month: 'short' })}
+                    {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short' })}
                   </Text>
                 </View>
                 <View style={styles.entryMoodContainer}>
-                  <Text style={styles.entryMood}>{entry.moodEmoji}</Text>
+                  <Text style={styles.entryMood}>{entry.mood_emoji}</Text>
                 </View>
                 <View style={styles.entryContent}>
                   <Text style={styles.entryDecision} numberOfLines={2}>
@@ -272,7 +270,7 @@ export default function DashboardContent() {
                   </Text>
                   <View style={styles.entryMeta}>
                     <Text style={styles.entryTime}>
-                      {new Date(entry.createdAt).toLocaleTimeString([], {
+                      {new Date(entry.created_at).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
@@ -319,7 +317,7 @@ function getThisWeekEntries(entries: any[]) {
   startOfWeek.setHours(0, 0, 0, 0);
   
   return entries.filter(entry => 
-    new Date(entry.createdAt) >= startOfWeek
+    new Date(entry.created_at) >= startOfWeek
   );
 }
 
@@ -364,7 +362,7 @@ function getStreakCount(entries: any[]): number {
     checkDate.setDate(today.getDate() - i);
     
     const hasEntry = entries.some(entry => {
-      const entryDate = new Date(entry.createdAt);
+      const entryDate = new Date(entry.created_at);
       return entryDate.toDateString() === checkDate.toDateString();
     });
     
