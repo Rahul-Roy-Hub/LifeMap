@@ -5,13 +5,14 @@ import { useUser } from '@/components/UserContext';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
+import { isThisWeek, getDaysAgo } from '@/lib/dateUtils';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardContent() {
   const { entries, subscription, getWeeklySummary } = useUser();
 
-  const thisWeekEntries = getThisWeekEntries(entries);
+  const thisWeekEntries = entries.filter(entry => isThisWeek(entry.date));
   const averageMood = thisWeekEntries.length > 0 
     ? thisWeekEntries.reduce((sum, entry) => sum + entry.mood, 0) / thisWeekEntries.length
     : 0;
@@ -311,16 +312,6 @@ export default function DashboardContent() {
 }
 
 // Helper functions
-function getThisWeekEntries(entries: any[]) {
-  const now = new Date();
-  const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  return entries.filter(entry => 
-    new Date(entry.created_at) >= startOfWeek
-  );
-}
-
 function getHabitStats(entries: any[]) {
   const habitCounts: { [key: string]: number } = {};
   
@@ -355,16 +346,10 @@ function getStreakCount(entries: any[]): number {
   if (entries.length === 0) return 0;
   
   let streak = 0;
-  const today = new Date();
   
   for (let i = 0; i < 30; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(today.getDate() - i);
-    
-    const hasEntry = entries.some(entry => {
-      const entryDate = new Date(entry.created_at);
-      return entryDate.toDateString() === checkDate.toDateString();
-    });
+    const checkDateString = getDaysAgo(i);
+    const hasEntry = entries.some(entry => entry.date === checkDateString);
     
     if (hasEntry) {
       streak++;

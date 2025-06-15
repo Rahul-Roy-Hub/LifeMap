@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { useAuthContext } from './AuthProvider';
 import { useJournalEntries } from '@/hooks/useJournalEntries';
 import { Database } from '@/types/database';
+import { getCurrentLocalDate, getStartOfWeek, getStartOfMonth, formatDateForDatabase, isThisWeek, isThisMonth } from '@/lib/dateUtils';
 
 type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -47,20 +48,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const loading = authLoading || entriesLoading;
 
-  // Calculate entries this week
-  const now = new Date();
-  const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  const thisWeekEntries = entries.filter(entry => 
-    new Date(entry.created_at) >= startOfWeek
-  );
+  // Calculate entries this week using local timezone
+  const thisWeekEntries = entries.filter(entry => isThisWeek(entry.date));
 
-  // Calculate entries this month
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthEntries = entries.filter(entry => 
-    new Date(entry.created_at) >= startOfMonth
-  );
+  // Calculate entries this month using local timezone
+  const thisMonthEntries = entries.filter(entry => isThisMonth(entry.date));
 
   const subscription: UserSubscription = {
     plan: profile?.subscription_plan || 'free',
@@ -102,7 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getTodaysEntry = (): JournalEntry | null => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const today = getCurrentLocalDate();
     return entries.find(entry => entry.date === today) || null;
   };
 

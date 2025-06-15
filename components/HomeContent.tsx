@@ -8,16 +8,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight, useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming } from 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Database } from '@/types/database';
+import { getCurrentLocalDate, getDaysAgo, isThisWeek } from '@/lib/dateUtils';
 
 const { width } = Dimensions.get('window');
 
 type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 type Json = Database['public']['Tables']['journal_entries']['Row']['habits'];
-
-// Helper function to format date consistently
-const formatDateForDatabase = (date: Date): string => {
-  return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
-};
 
 // Helper function to safely parse habits
 function isPlainObject(obj: unknown): obj is { [key: string]: boolean } {
@@ -45,7 +41,7 @@ export default function HomeContent() {
   const { subscription, entries, getWeeklySummary, getTodaysEntry } = useUser();
   const { profile } = useAuthContext();
   
-  // Get today's entry
+  // Get today's entry using timezone-aware function
   const todaysEntry = getTodaysEntry();
   const hasEntryToday = !!todaysEntry;
 
@@ -91,13 +87,9 @@ export default function HomeContent() {
     if (entries.length === 0) return 0;
     
     let streak = 0;
-    const today = new Date();
     
     for (let i = 0; i < 30; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const checkDateString = formatDateForDatabase(checkDate);
-      
+      const checkDateString = getDaysAgo(i);
       const hasEntry = entries.some(entry => entry.date === checkDateString);
       
       if (hasEntry) {
@@ -127,13 +119,7 @@ export default function HomeContent() {
   const getInsightCard = () => {
     const streak = getStreakCount();
     const avgMood = getAverageMood();
-    const thisWeekEntries = entries.filter(entry => {
-      const now = new Date();
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-      startOfWeek.setHours(0, 0, 0, 0);
-      const startOfWeekString = formatDateForDatabase(startOfWeek);
-      return entry.date >= startOfWeekString;
-    });
+    const thisWeekEntries = entries.filter(entry => isThisWeek(entry.date));
 
     if (streak >= 7) {
       return {
