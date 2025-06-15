@@ -5,7 +5,7 @@ import { useUser } from '@/components/UserContext';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
-import { isThisWeek, getDaysAgo } from '@/lib/dateUtils';
+import { isThisWeek, calculateStreakCount } from '@/lib/dateUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -19,7 +19,7 @@ export default function DashboardContent() {
 
   const habitStats = getHabitStats(thisWeekEntries);
   const moodTrend = getMoodTrend(entries);
-  const streakCount = getStreakCount(entries);
+  const streakCount = calculateStreakCount(entries);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -340,25 +340,6 @@ function getMoodTrend(entries: any[]): string {
   if (recentAvg > olderAvg) return '📈 Improving';
   if (recentAvg < olderAvg) return '📉 Declining';
   return '➡️ Stable';
-}
-
-function getStreakCount(entries: any[]): number {
-  if (entries.length === 0) return 0;
-  
-  let streak = 0;
-  
-  for (let i = 0; i < 30; i++) {
-    const checkDateString = getDaysAgo(i);
-    const hasEntry = entries.some(entry => entry.date === checkDateString);
-    
-    if (hasEntry) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  
-  return streak;
 }
 
 function getMoodEmoji(mood: number): string {

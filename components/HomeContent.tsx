@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight, useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming } from 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Database } from '@/types/database';
-import { getCurrentLocalDate, getDaysAgo, isThisWeek } from '@/lib/dateUtils';
+import { getCurrentLocalDate, getDaysAgo, isThisWeek, calculateStreakCount } from '@/lib/dateUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -83,23 +83,9 @@ export default function HomeContent() {
     return totalMood / entries.length;
   };
 
+  // Use the new streak calculation function
   const getStreakCount = (): number => {
-    if (entries.length === 0) return 0;
-    
-    let streak = 0;
-    
-    for (let i = 0; i < 30; i++) {
-      const checkDateString = getDaysAgo(i);
-      const hasEntry = entries.some(entry => entry.date === checkDateString);
-      
-      if (hasEntry) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    
-    return streak;
+    return calculateStreakCount(entries);
   };
 
   const getMotivationalMessage = (): string => {
@@ -333,7 +319,7 @@ export default function HomeContent() {
                 <View style={[styles.statProgressBar, { width: `${Math.min((getStreakCount() / 30) * 100, 100)}%`, backgroundColor: '#10b981' }]} />
               </View>
               <Text style={styles.statSubtext}>
-                {getStreakCount() >= 30 ? 'Legendary!' : `${30 - getStreakCount()} to legend`}
+                {getStreakCount() >= 30 ? 'Legendary!' : getStreakCount() >= 7 ? 'On fire!' : 'Keep going!'}
               </Text>
             </LinearGradient>
           </View>

@@ -126,3 +126,86 @@ export const isThisMonth = (dateString: string): boolean => {
   const now = new Date();
   return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 };
+
+/**
+ * Calculate the current streak count based on journal entries
+ * A streak is broken if there's a gap of more than one day between entries
+ */
+export const calculateStreakCount = (entries: Array<{ date: string }>): number => {
+  if (entries.length === 0) return 0;
+
+  // Sort entries by date in descending order (most recent first)
+  const sortedEntries = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+  
+  // Get unique dates (in case there are multiple entries per day)
+  const uniqueDates = Array.from(new Set(sortedEntries.map(entry => entry.date))).sort((a, b) => b.localeCompare(a));
+  
+  if (uniqueDates.length === 0) return 0;
+
+  const today = getCurrentLocalDate();
+  const yesterday = getDaysAgo(1);
+  
+  // Check if the most recent entry is today or yesterday
+  const mostRecentDate = uniqueDates[0];
+  if (mostRecentDate !== today && mostRecentDate !== yesterday) {
+    return 0; // Streak is broken if the most recent entry is not today or yesterday
+  }
+
+  let streak = 0;
+  let currentDate = new Date();
+  
+  // If the most recent entry is yesterday, start counting from yesterday
+  if (mostRecentDate === yesterday) {
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
+
+  // Count consecutive days backwards from the most recent entry
+  for (let i = 0; i < uniqueDates.length; i++) {
+    const expectedDate = formatDateForDatabase(currentDate);
+    
+    if (uniqueDates[i] === expectedDate) {
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      // Gap found, streak is broken
+      break;
+    }
+  }
+
+  return streak;
+};
+
+/**
+ * Get the difference in days between two date strings
+ */
+export const getDaysDifference = (date1: string, date2: string): number => {
+  const d1 = parseDateFromDatabase(date1);
+  const d2 = parseDateFromDatabase(date2);
+  const timeDiff = Math.abs(d2.getTime() - d1.getTime());
+  return Math.ceil(timeDiff / (1000 * 3600 * 24));
+};
+
+/**
+ * Check if two dates are consecutive (one day apart)
+ */
+export const areConsecutiveDates = (date1: string, date2: string): boolean => {
+  return getDaysDifference(date1, date2) === 1;
+};
+
+/**
+ * Get the next date after a given date string
+ */
+export const getNextDate = (dateString: string): string => {
+  const date = parseDateFromDatabase(dateString);
+  date.setDate(date.getDate() + 1);
+  return formatDateForDatabase(date);
+};
+
+/**
+ * Get the previous date before a given date string
+ */
+export const getPreviousDate = (dateString: string): string => {
+  const date = parseDateFromDatabase(dateString);
+  date.setDate(date.getDate() - 1);
+  return formatDateForDatabase(date);
+};
