@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { X, Save, Calendar, Heart, Target, CheckCircle, Circle } from 'lucide-react-native';
+import { X, Save, Calendar, Heart, Target, CircleCheck as CheckCircle, Circle } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useUser } from '@/components/UserContext';
 import { LinearGradient } from 'expo-linear-gradient';
