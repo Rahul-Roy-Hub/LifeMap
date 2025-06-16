@@ -7,7 +7,7 @@ interface ChatMessage {
 
 export class ChatService {
   private static instance: ChatService;
-  private readonly WEBHOOK_URL = process.env.EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL;
+  private readonly WEBHOOK_URL = process.env.BOTPRESS_WEBHOOK_URL;
 
   private constructor() {
     if (!this.WEBHOOK_URL) {
