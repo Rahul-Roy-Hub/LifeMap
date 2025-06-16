@@ -55,6 +55,7 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 - Node.js 18+ 
 - Expo CLI
 - Supabase account
+- Docker (for containerized deployment)
 
 ### Installation
 
@@ -87,6 +88,62 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```bash
 npm run dev
 ```
+
+## 🐳 Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+1. Copy the environment file:
+```bash
+cp .env.example .env
+```
+
+2. Update the `.env` file with your actual values
+
+3. Build and run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+The app will be available at `http://localhost:3000`
+
+### Using Docker directly
+
+1. Build the Docker image:
+```bash
+docker build -t lifemap-app .
+```
+
+2. Run the container:
+```bash
+docker run -d \
+  --name lifemap-app \
+  -p 3000:3000 \
+  -e EXPO_PUBLIC_SUPABASE_URL=your_supabase_url \
+  -e EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key \
+  lifemap-app
+```
+
+### Environment Variables
+
+The following environment variables are required:
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
+| `EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL` | Botpress webhook URL (for AI features) | No |
+| `EXPO_PUBLIC_BOTPRESS_API_KEY` | Botpress API key (for AI features) | No |
+
+### Health Checks
+
+The Docker container includes health checks at `/health` endpoint. The container is considered healthy when this endpoint returns a 200 status code.
+
+### Resource Requirements
+
+- **Memory**: 256MB minimum, 512MB recommended
+- **CPU**: 0.5 cores minimum, 1 core recommended
+- **Storage**: 1GB minimum for container and logs
 
 ## 📊 Database Schema
 
@@ -140,9 +197,13 @@ CREATE TABLE journal_entries (
 │   └── useJournalEntries.ts # Journal entries hook
 ├── lib/                   # Utilities and configurations
 │   └── supabase.ts        # Supabase client
-└── types/                 # TypeScript type definitions
-    ├── database.ts        # Database types
-    └── env.d.ts          # Environment types
+├── types/                 # TypeScript type definitions
+│   ├── database.ts        # Database types
+│   └── env.d.ts          # Environment types
+├── Dockerfile             # Docker configuration
+├── docker-compose.yml     # Docker Compose configuration
+├── nginx.conf            # Nginx configuration
+└── .dockerignore         # Docker ignore file
 ```
 
 ## 🔑 Key Features Implementation
@@ -174,12 +235,37 @@ CREATE TABLE journal_entries (
 npm run build:web
 ```
 
+### Docker Deployment
+```bash
+docker-compose up -d
+```
+
 ### Mobile Deployment
 1. Configure app.json for your target platforms
 2. Build with EAS Build:
 ```bash
 eas build --platform all
 ```
+
+## 🔧 Production Considerations
+
+### Security
+- All environment variables are properly configured
+- Nginx security headers are enabled
+- Non-root user execution in Docker
+- Health checks for container monitoring
+
+### Performance
+- Gzip compression enabled
+- Static asset caching
+- Optimized Docker image layers
+- Resource limits configured
+
+### Monitoring
+- Health check endpoints
+- Structured logging
+- Container restart policies
+- Resource usage monitoring
 
 ## 🤝 Contributing
 

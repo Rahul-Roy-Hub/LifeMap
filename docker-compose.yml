@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  lifemap-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Supabase Configuration
+      - EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}
+      - EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+      
+      # Optional: Botpress Configuration (if using AI features)
+      - EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL=${EXPO_PUBLIC_BOTPRESS_WEBHOOK_URL:-}
+      - EXPO_PUBLIC_BOTPRESS_API_KEY=${EXPO_PUBLIC_BOTPRESS_API_KEY:-}
+      
+      # Node Environment
+      - NODE_ENV=production
+      - EXPO_NO_TELEMETRY=1
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: lifemap-network
