@@ -60,8 +60,8 @@ A beautiful, feature-rich journaling app built with Expo and Supabase that helps
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/lifemap-journaling-app.git
-cd lifemap-journaling-app
+git clone https://github.com/Rahul-Roy-Hub/LifeMap.git
+cd LifeMap
 ```
 
 2. Install dependencies:
