@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Platform } from 'react-native';
-import { BotpressService } from '../lib/botpress';
 import { useAuth } from '../hooks/useAuth';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TrendingUp, Target, Activity, Award, ArrowRight, Sparkles, RefreshCw } from 'lucide-react-native';
+import { AIService } from '../lib/ai-service';
 
 interface WeeklySummaryProps {
   startDate: Date;
@@ -46,6 +46,7 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
+  const aiService = AIService.getInstance();
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -60,36 +61,54 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
         throw new Error('Please sign in to view your weekly summary');
       }
 
-      const botpressService = BotpressService.getInstance();
-      const result = await botpressService.generateWeeklySummary(
+      // Calculate the date range for the current week
+      const now = new Date();
+      const currentWeekStart = new Date(now);
+      currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      currentWeekStart.setHours(0, 0, 0, 0);
+
+      const currentWeekEnd = new Date(currentWeekStart);
+      currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // End of week (Saturday)
+      currentWeekEnd.setHours(23, 59, 59, 999);
+
+      console.log('Fetching summary for date range:', {
+        start: currentWeekStart.toISOString(),
+        end: currentWeekEnd.toISOString()
+      });
+
+      const result = await aiService.generateWeeklySummary(
         user.id,
-        startDate,
-        endDate
+        currentWeekStart,
+        currentWeekEnd
       );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate weekly summary');
+      }
 
       // Ensure all required properties exist and are of the correct type
       const safeResult = {
-        summary: result?.summary || defaultSummary.summary,
-        insights: ensureArray(result?.insights),
+        summary: String(result.result?.summary || defaultSummary.summary),
+        insights: ensureArray(result.result?.insights).map(String),
         moodAnalysis: {
-          averageMood: result?.moodAnalysis?.averageMood ?? defaultSummary.moodAnalysis.averageMood,
-          moodTrend: result?.moodAnalysis?.moodTrend || defaultSummary.moodAnalysis.moodTrend,
-          suggestions: ensureArray(result?.moodAnalysis?.suggestions),
-          moodDistribution: result?.moodAnalysis?.moodDistribution || defaultSummary.moodAnalysis.moodDistribution
+          averageMood: Number(result.result?.moodAnalysis?.averageMood ?? defaultSummary.moodAnalysis.averageMood),
+          moodTrend: String(result.result?.moodAnalysis?.moodTrend || defaultSummary.moodAnalysis.moodTrend),
+          suggestions: ensureArray(result.result?.moodAnalysis?.suggestions).map(String),
+          moodDistribution: result.result?.moodAnalysis?.moodDistribution || defaultSummary.moodAnalysis.moodDistribution
         },
         habitAnalysis: {
-          topHabits: ensureArray(result?.habitAnalysis?.topHabits),
-          habitSuggestions: ensureArray(result?.habitAnalysis?.habitSuggestions)
+          topHabits: ensureArray(result.result?.habitAnalysis?.topHabits).map(String),
+          habitSuggestions: ensureArray(result.result?.habitAnalysis?.habitSuggestions).map(String)
         },
         goalsProgress: {
-          completed: result?.goalsProgress?.completed ?? defaultSummary.goalsProgress.completed,
-          inProgress: result?.goalsProgress?.inProgress ?? defaultSummary.goalsProgress.inProgress,
-          suggestions: ensureArray(result?.goalsProgress?.suggestions)
+          completed: Number(result.result?.goalsProgress?.completed ?? defaultSummary.goalsProgress.completed),
+          inProgress: Number(result.result?.goalsProgress?.inProgress ?? defaultSummary.goalsProgress.inProgress),
+          suggestions: ensureArray(result.result?.goalsProgress?.suggestions).map(String)
         },
         nextWeekRecommendations: {
-          focusAreas: ensureArray(result?.nextWeekRecommendations?.focusAreas),
-          actionItems: ensureArray(result?.nextWeekRecommendations?.actionItems),
-          habitGoals: ensureArray(result?.nextWeekRecommendations?.habitGoals)
+          focusAreas: ensureArray(result.result?.nextWeekRecommendations?.focusAreas).map(String),
+          actionItems: ensureArray(result.result?.nextWeekRecommendations?.actionItems).map(String),
+          habitGoals: ensureArray(result.result?.nextWeekRecommendations?.habitGoals).map(String)
         }
       };
 

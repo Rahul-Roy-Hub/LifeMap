@@ -28,6 +28,7 @@ interface UserContextType {
     habits: { [key: string]: boolean };
   }) => Promise<any>;
   updateEntry: (id: string, entry: {
+    date: string;
     mood: number;
     moodEmoji: string;
     decision: string;
@@ -88,12 +89,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateEntry = async (id: string, entryData: {
+    date: string;
     mood: number;
     moodEmoji: string;
     decision: string;
     habits: { [key: string]: boolean };
   }) => {
     return await updateJournalEntry(id, {
+      date: entryData.date,
       mood: entryData.mood,
       mood_emoji: entryData.moodEmoji,
       decision: entryData.decision,
@@ -102,8 +105,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getTodaysEntry = (): JournalEntry | null => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    return entries.find(entry => entry.date === today) || null;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    return entries.find(entry => entry.date === todayStr) || null;
   };
 
   const updateSubscription = async (plan: 'free' | 'pro') => {

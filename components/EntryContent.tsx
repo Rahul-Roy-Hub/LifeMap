@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Target, Lightbulb, Heart } from 'lucide-react-native';
@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useUser } from '@/components/UserContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight, useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
@@ -35,9 +36,15 @@ const journalPrompts = [
   "What lesson did today teach me?",
 ];
 
+// Helper function to convert to IST
+const convertToIST = (date: Date): Date => {
+  return new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+};
+
 // Helper function to format date consistently
 const formatDateForDatabase = (date: Date): string => {
-  return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  // Always use UTC to avoid timezone issues
+  return date.toISOString().split('T')[0];
 };
 
 export default function EntryContent() {
@@ -87,12 +94,15 @@ export default function EntryContent() {
   };
 
   const handleHabitPress = (habit: string) => {
-    // Immediately update the state for better responsiveness
-    setHabits(prev => ({
-      ...prev,
-      [habit]: !prev[habit],
-    }));
-    // Trigger haptic feedback after state update
+    console.log('Habit pressed:', habit);
+    setHabits(prev => {
+      const newState = {
+        ...prev,
+        [habit]: !prev[habit],
+      };
+      console.log('New habits state:', newState);
+      return newState;
+    });
     triggerHapticFeedback();
   };
 
@@ -102,8 +112,10 @@ export default function EntryContent() {
   };
 
   const handleSave = async () => {
-    if (!selectedMood || !decision.trim()) {
-      Alert.alert('Missing Information', 'Please select your mood and write about your day.');
+    Keyboard.dismiss();
+    console.log('Save button pressed');
+    if (!selectedMood) {
+      Alert.alert('Missing Information', 'Please select your mood.');
       return;
     }
 
@@ -118,13 +130,13 @@ export default function EntryContent() {
       };
 
       let result;
-      
       if (isEditing && todaysEntry) {
-        // Update existing entry
         console.log('Updating existing entry:', todaysEntry.id);
-        result = await updateEntry(todaysEntry.id, entryData);
+        result = await updateEntry(todaysEntry.id, {
+          date: todaysEntry.date,
+          ...entryData,
+        });
       } else {
-        // Create new entry
         console.log('Creating new entry for today');
         const todayDateString = formatDateForDatabase(new Date());
         result = await addEntry({
@@ -133,30 +145,27 @@ export default function EntryContent() {
         });
       }
 
+      console.log('Result from update/add:', result);
+
       if (result.error) {
         console.error('Save error:', result.error);
         Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'save'} entry: ${result.error}`);
       } else {
         console.log('Entry saved successfully:', result.data);
-        
-        // Show success message and navigate back
-        Alert.alert(
-          'Success!', 
-          `Your journal entry has been ${isEditing ? 'updated' : 'saved'} successfully!`, 
-          [
-            { 
-              text: 'OK', 
-              onPress: () => {
-                // Navigate back to the home screen (tabs)
-                router.replace('/(tabs)');
-              }
-            }
-          ]
-        );
+        // Show a toast and auto-navigate after a short delay
+        Toast.show({
+          type: 'success',
+          text1: 'Entry saved successfully!',
+          position: 'bottom',
+          visibilityTime: 1500,
+        });
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000);
       }
     } catch (error) {
       console.error('Unexpected error saving entry:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      Alert.alert('Error', `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSaving(false);
     }
@@ -668,7 +677,11 @@ export default function EntryContent() {
               style={[
                 styles.textInput, 
                 isTablet && styles.textInputTablet,
-                isLargeTablet && styles.textInputLargeTablet
+                isLargeTablet && styles.textInputLargeTablet,
+                decision.length > 0 && {
+                  borderColor: '#f97316',
+                  borderWidth: 2,
+                }
               ]}
               multiline
               numberOfLines={isLargeTablet ? 10 : isTablet ? 8 : 6}
@@ -769,7 +782,7 @@ export default function EntryContent() {
                         {habit.icon}
                       </Text>
                     </View>
-                    <View style={styles.habitInfo}>
+                    <View style={[styles.habitInfo, { flex: 1 }]}>
                       <Text style={[
                         styles.habitLabel,
                         isLargeTablet && styles.habitLabelLargeTablet,
@@ -1411,6 +1424,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  textInputActive: {
+    borderColor: '#f1f5f9',
   },
   textInputTablet: {
     borderRadius: 20,

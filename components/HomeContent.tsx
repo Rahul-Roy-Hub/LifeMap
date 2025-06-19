@@ -1,13 +1,15 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Heart, Target, TrendingUp, Calendar, Sparkles, ArrowRight, Zap, Award, Activity, User, CreditCard as Edit } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { useUser } from '@/components/UserContext';
 import { useAuthContext } from '@/components/AuthProvider';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight, useSharedValue, useAnimatedStyle, withSpring, withRepeat, withTiming } from 'react-native-reanimated';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Database } from '@/types/database';
+import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
 
@@ -41,9 +43,17 @@ const gradientColors = {
   disabled: ['#9ca3af', '#6b7280'] as const
 };
 
+// Helper function to convert to IST (UTC+5:30) without using toLocaleString timeZone
+const convertToIST = (date: Date): Date => {
+  const IST_OFFSET = 330; // in minutes
+  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+  return new Date(utc + (IST_OFFSET * 60000));
+};
+
 export default function HomeContent() {
   const { subscription, entries, getWeeklySummary, getTodaysEntry } = useUser();
   const { profile } = useAuthContext();
+  const router = useRouter();
   
   // Get today's entry
   const todaysEntry = getTodaysEntry();
@@ -52,6 +62,15 @@ export default function HomeContent() {
   // Animated values for micro-interactions
   const pulseValue = useSharedValue(1);
   const sparkleRotation = useSharedValue(0);
+
+  // Weather state
+  const [weather, setWeather] = useState<null | {
+    temp: number;
+    description: string;
+    icon: string;
+    city: string;
+  }>(null);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   useEffect(() => {
     // Pulse animation for the add entry button
@@ -67,6 +86,37 @@ export default function HomeContent() {
       -1,
       false
     );
+
+    // Fetch weather on mount
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setWeatherError('Permission to access location was denied');
+          return;
+        }
+        let location = await Location.getCurrentPositionAsync({});
+        const lat = location.coords.latitude;
+        const lon = location.coords.longitude;
+        // Call your backend proxy instead of OpenWeatherMap directly
+        const url = `http://192.168.0.115:5000/api/weather?lat=${lat}&lon=${lon}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('Weather API response:', data);
+        if (data && data.weather && data.weather.length > 0) {
+          setWeather({
+            temp: data.main.temp,
+            description: data.weather[0].description,
+            icon: data.weather[0].icon,
+            city: data.name,
+          });
+        } else {
+          setWeatherError('Unable to fetch weather');
+        }
+      } catch (e) {
+        setWeatherError('Unable to fetch weather');
+      }
+    })();
   }, []);
 
   const pulseStyle = useAnimatedStyle(() => ({
@@ -194,6 +244,24 @@ export default function HomeContent() {
                 
                 {/* Weather-like mood indicator */}
                 <View style={styles.moodWeather}>
+                  {/* Real-time weather display */}
+                  {weather ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                      <Image
+                        source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
+                        style={{ width: 32, height: 32, marginRight: 4 }}
+                      />
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-Medium', fontSize: 14, marginRight: 4 }}>
+                        {Math.round(weather.temp)}°C
+                      </Text>
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-Regular', fontSize: 13, textTransform: 'capitalize' }}>
+                        {weather.description}
+                      </Text>
+                    </View>
+                  ) : weatherError ? (
+                    <Text style={{ color: '#fff', fontSize: 12, marginRight: 8 }}>{weatherError}</Text>
+                  ) : null}
+                  {/* Mood-based indicator (keep as well) */}
                   <Text style={styles.moodWeatherEmoji}>
                     {getAverageMood() >= 4 ? '☀️' : getAverageMood() >= 3 ? '⛅' : '🌧️'}
                   </Text>
@@ -274,10 +342,13 @@ export default function HomeContent() {
                     </Text>
                     <View style={styles.entryMeta}>
                       <Text style={styles.entryTime}>
-                        {new Date(todaysEntry.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {(() => {
+                          const istDate = convertToIST(new Date(todaysEntry.created_at));
+                          return istDate.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                        })()}
                       </Text>
                       <View style={styles.habitSummary}>
                         <Text style={styles.habitSummaryText}>
@@ -421,7 +492,7 @@ export default function HomeContent() {
         <Animated.View entering={FadeInDown.delay(600)} style={styles.recentSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Reflections</Text>
-            <TouchableOpacity style={styles.viewAllButton}>
+            <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/all-entries')}>
               <Text style={styles.viewAllText}>View All</Text>
               <ArrowRight size={16} color="#667eea" />
             </TouchableOpacity>
@@ -460,10 +531,13 @@ export default function HomeContent() {
                   </Text>
                   <View style={styles.recentEntryMeta}>
                     <Text style={styles.recentEntryTime}>
-                      {new Date(entry.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {(() => {
+                        const istDate = convertToIST(new Date(entry.created_at));
+                        return istDate.toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+                      })()}
                     </Text>
                     <View style={styles.habitIndicators}>
                       {Object.entries(habits).slice(0, 3).map(([habit, completed], i) => (

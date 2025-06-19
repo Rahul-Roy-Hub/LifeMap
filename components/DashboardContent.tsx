@@ -5,8 +5,16 @@ import { useUser } from '@/components/UserContext';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
+import PieChart from 'react-native-pie-chart';
 
 const { width } = Dimensions.get('window');
+
+type Goal = {
+  id: string;
+  title: string;
+  habit: string;
+  target: number;
+};
 
 export default function DashboardContent() {
   const { entries, subscription, getWeeklySummary } = useUser();
@@ -17,8 +25,29 @@ export default function DashboardContent() {
     : 0;
 
   const habitStats = getHabitStats(thisWeekEntries);
+  // Only show these habits in Habit Progress
+  const allowedHabits = ['Exercise', 'Meditation', 'Reading', 'Healthy Eating', 'Early Sleep', 'Gratitude'];
+  const filteredHabitStats = Object.fromEntries(
+    Object.entries(habitStats).filter(([habit]) => allowedHabits.includes(habit))
+  );
   const moodTrend = getMoodTrend(entries);
   const streakCount = getStreakCount(entries);
+
+  // Pie chart data for habits
+  const pieColors = ['#10b981', '#f59e42', '#6366f1', '#f43f5e', '#eab308', '#22c55e', '#8b5cf6'];
+  const pieLabels = Object.keys(habitStats);
+  const pieSeries = Object.values(habitStats).map((value, idx) => ({
+    value,
+    color: pieColors[idx % pieColors.length],
+  }));
+
+  // Goal Progress pie chart uses Habit Progress data
+  const goalPieSeries = Object.entries(filteredHabitStats).map(([habit, count], idx) => ({
+    value: Math.min(Math.round((count / 7) * 100), 100),
+    color: pieColors[idx % pieColors.length],
+    name: habit,
+    id: habit,
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -175,7 +204,7 @@ export default function DashboardContent() {
             <Text style={styles.sectionSubtitle}>This week's consistency</Text>
           </View>
           <View style={styles.habitsList}>
-            {Object.entries(habitStats).map(([habit, count], index) => (
+            {Object.entries(filteredHabitStats).map(([habit, count], index) => (
               <Animated.View 
                 key={habit} 
                 entering={FadeInDown.delay(500 + index * 50)}
@@ -204,7 +233,7 @@ export default function DashboardContent() {
                 </View>
               </Animated.View>
             ))}
-            {Object.keys(habitStats).length === 0 && (
+            {Object.keys(filteredHabitStats).length === 0 && (
               <View style={styles.emptyHabits}>
                 <BarChart3 size={48} color="#d1d5db" />
                 <Text style={styles.emptyHabitsTitle}>No habit data yet</Text>
@@ -236,75 +265,42 @@ export default function DashboardContent() {
           </Animated.View>
         )}
 
-        {/* Enhanced Recent Entries */}
-        <Animated.View entering={FadeInDown.delay(600)} style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Entries</Text>
-            <TouchableOpacity style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <ArrowRight size={16} color="#667eea" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.entriesList}>
-            {entries.slice(0, 5).map((entry, index) => (
-              <Animated.View 
-                key={entry.id} 
-                entering={FadeInDown.delay(700 + index * 50)}
-                style={styles.entryItem}
-              >
-                <View style={styles.entryDate}>
-                  <Text style={styles.entryDateDay}>
-                    {new Date(entry.created_at).getDate()}
-                  </Text>
-                  <Text style={styles.entryDateMonth}>
-                    {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short' })}
-                  </Text>
-                </View>
-                <View style={styles.entryMoodContainer}>
-                  <Text style={styles.entryMood}>{entry.mood_emoji}</Text>
-                </View>
-                <View style={styles.entryContent}>
-                  <Text style={styles.entryDecision} numberOfLines={2}>
-                    {entry.decision}
-                  </Text>
-                  <View style={styles.entryMeta}>
-                    <Text style={styles.entryTime}>
-                      {new Date(entry.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </Text>
-                    <Text style={styles.entryHabits}>
-                      {Object.values(entry.habits).filter(Boolean).length} habits
+        {/* Pie Chart for Goal Progress */}
+        {goalPieSeries.length > 0 && (
+          <View style={{ alignItems: 'center', marginVertical: 24 }}>
+            <Text style={{ fontSize: 26, fontWeight: 'bold', marginBottom: 12 }}>Goal Progress</Text>
+            <PieChart
+              widthAndHeight={160}
+              series={goalPieSeries}
+            />
+            {/* Habit completion summary */}
+            {Object.entries(filteredHabitStats).length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
+                {Object.entries(filteredHabitStats).map(([habit, count], idx) => (
+                  <View key={habit} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, marginBottom: 4 }}>
+                    <View style={{ width: 12, height: 12, backgroundColor: pieColors[idx % pieColors.length], borderRadius: 6, marginRight: 6 }} />
+                    <Text style={{ fontWeight: 'bold', color: '#374151', marginRight: 4 }}>{habit}:</Text>
+                    <Text
+                      style={{
+                        backgroundColor: '#6366f1',
+                        color: '#fff',
+                        borderRadius: 12,
+                        paddingHorizontal: 10,
+                        paddingVertical: 2,
+                        fontWeight: 'bold',
+                        fontSize: 14,
+                        overflow: 'hidden',
+                        marginLeft: 2,
+                      }}
+                    >
+                      {count}x
                     </Text>
                   </View>
-                </View>
-                <TouchableOpacity style={styles.entryAction}>
-                  <ArrowRight size={16} color="#9ca3af" />
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-            
-            {entries.length === 0 && (
-              <Animated.View entering={FadeInDown.delay(700)} style={styles.emptyStateContainer}>
-                <View style={styles.emptyStateIcon}>
-                  <Calendar size={48} color="#d1d5db" />
-                </View>
-                <Text style={styles.emptyStateTitle}>No entries yet</Text>
-                <Text style={styles.emptyStateText}>
-                  Start journaling to see your progress and insights here
-                </Text>
-                <TouchableOpacity 
-                  style={styles.emptyStateButton}
-                  onPress={() => router.push('/entry')}
-                >
-                  <Text style={styles.emptyStateButtonText}>Create First Entry</Text>
-                </TouchableOpacity>
-              </Animated.View>
+                ))}
+              </View>
             )}
           </View>
-        </Animated.View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -356,23 +352,21 @@ function getStreakCount(entries: any[]): number {
   
   let streak = 0;
   const today = new Date();
-  
+  // Helper to format date as YYYY-MM-DD
+  const formatDateForDatabase = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
   for (let i = 0; i < 30; i++) {
     const checkDate = new Date(today);
     checkDate.setDate(today.getDate() - i);
-    
-    const hasEntry = entries.some(entry => {
-      const entryDate = new Date(entry.created_at);
-      return entryDate.toDateString() === checkDate.toDateString();
-    });
-    
+    const checkDateString = formatDateForDatabase(checkDate);
+    const hasEntry = entries.some(entry => entry.date === checkDateString);
     if (hasEntry) {
       streak++;
     } else {
       break;
     }
   }
-  
   return streak;
 }
 
@@ -399,6 +393,7 @@ function getHabitIcon(habit: string): string {
     'Reading': '📚',
     'Healthy Eating': '🥗',
     'Early Sleep': '😴',
+    'Gratitude': '🙏',
   };
   return icons[habit] || '✅';
 }
@@ -782,109 +777,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#374151',
     lineHeight: 24,
-  },
-  entriesList: {
-    paddingHorizontal: 20,
-  },
-  entryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  entryDate: {
-    alignItems: 'center',
-    marginRight: 16,
-    minWidth: 40,
-  },
-  entryDateDay: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
-    color: '#1e293b',
-  },
-  entryDateMonth: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: '#64748b',
-  },
-  entryMoodContainer: {
-    marginRight: 16,
-  },
-  entryMood: {
-    fontSize: 24,
-  },
-  entryContent: {
-    flex: 1,
-  },
-  entryDecision: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#374151',
-    marginBottom: 6,
-    lineHeight: 20,
-  },
-  entryMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  entryTime: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#64748b',
-  },
-  entryHabits: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#64748b',
-  },
-  entryAction: {
-    padding: 8,
-  },
-  emptyStateContainer: {
-    alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-  },
-  emptyStateIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#f8fafc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#9ca3af',
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  emptyStateButton: {
-    backgroundColor: '#667eea',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  emptyStateButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: '#ffffff',
   },
 });

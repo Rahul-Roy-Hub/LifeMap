@@ -12,7 +12,10 @@ import {
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/components/AuthProvider';
+import { useAuthContext } from '@/components/AuthProvider';
+import AuthScreen from '@/components/AuthScreen';
 import { revenueCatService } from '../lib/revenuecat';
+import Toast from 'react-native-toast-message';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -47,14 +50,31 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="entry" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="profile-edit" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-      </Stack>
+      <AuthGate />
       <StatusBar style="auto" />
+      <Toast />
     </AuthProvider>
+  );
+}
+
+function AuthGate() {
+  const { user, loading } = useAuthContext();
+
+  if (loading) return null;
+
+  if (!user) {
+    // Show only login screen, no tab bar
+    return <AuthScreen />;
+  }
+
+  // Show the main app with tabs
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="entry" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="profile-edit" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+    </Stack>
   );
 }

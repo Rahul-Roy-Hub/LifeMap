@@ -13,6 +13,13 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { ChatService } from '../lib/chatService';
 
+// Add a simple robot icon component
+const BotIcon = () => (
+  <View style={styles.botIconContainer}>
+    <Text style={styles.botIcon}>🤖</Text>
+  </View>
+);
+
 interface Message {
   type: 'text';
   text: string;
@@ -66,26 +73,44 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
+  // Helper to render rich text (bullets, emojis) for bot messages
+  const renderBotText = (text: string) => {
+    // Simple bullet/emoji support
+    return text.split('\n').map((line, idx) => {
+      if (line.trim().startsWith('•')) {
+        return (
+          <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 2 }}>
+            <Text style={styles.bullet}>{'• '}</Text>
+            <Text style={styles.botMessageText}>{line.trim().substring(1).trim()}</Text>
+          </View>
+        );
+      }
+      return <Text key={idx} style={styles.botMessageText}>{line}</Text>;
+    });
+  };
+
   const renderMessage = (message: Message, index: number) => {
     const isUser = message.sender === 'user';
     return (
       <View
         key={index}
         style={[
-          styles.messageContainer,
-          isUser ? styles.userMessageContainer : styles.botMessageContainer,
+          styles.messageRow,
+          isUser ? styles.userMessageRow : styles.botMessageRow,
         ]}
       >
+        {!isUser && <BotIcon />}
         <View
           style={[
             styles.messageBubble,
             isUser ? styles.userMessageBubble : styles.botMessageBubble,
           ]}
         >
-          <Text style={styles.messageText}>{message.text}</Text>
-          <Text style={styles.timestamp}>
-            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          {isUser ? (
+            <Text style={styles.userMessageText}>{message.text}</Text>
+          ) : (
+            renderBotText(message.text)
+          )}
         </View>
       </View>
     );
@@ -147,34 +172,71 @@ const styles = StyleSheet.create({
   messagesContent: {
     padding: 16,
   },
-  messageContainer: {
-    marginBottom: 12,
-    maxWidth: '80%',
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 16,
+    maxWidth: '100%',
   },
-  userMessageContainer: {
-    alignSelf: 'flex-end',
+  userMessageRow: {
+    justifyContent: 'flex-end',
   },
-  botMessageContainer: {
-    alignSelf: 'flex-start',
+  botMessageRow: {
+    justifyContent: 'flex-start',
+  },
+  botIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e0e7ef',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  botIcon: {
+    fontSize: 20,
   },
   messageBubble: {
-    padding: 12,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 18,
+    maxWidth: 320,
+    minWidth: 60,
   },
   userMessageBubble: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#e0edff',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 18,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
   },
   botMessageBubble: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#fff',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  messageText: {
+  userMessageText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#222',
   },
-  timestamp: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 4,
+  botMessageText: {
+    fontSize: 16,
+    color: '#222',
+    lineHeight: 22,
+  },
+  bullet: {
+    fontSize: 16,
+    color: '#222',
+    marginRight: 4,
+    lineHeight: 22,
   },
   inputContainer: {
     flexDirection: 'row',
