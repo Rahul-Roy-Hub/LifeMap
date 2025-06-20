@@ -18,7 +18,10 @@ type Json = Database['public']['Tables']['journal_entries']['Row']['habits'];
 
 // Helper function to format date consistently
 const formatDateForDatabase = (date: Date): string => {
-  return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${dd}-${mm}-${yyyy}`;
 };
 
 // Helper function to safely parse habits

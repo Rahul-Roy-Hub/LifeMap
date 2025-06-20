@@ -43,8 +43,11 @@ const convertToIST = (date: Date): Date => {
 
 // Helper function to format date consistently
 const formatDateForDatabase = (date: Date): string => {
-  // Always use UTC to avoid timezone issues
-  return date.toISOString().split('T')[0];
+  // Use local date, not UTC
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 export default function EntryContent() {
