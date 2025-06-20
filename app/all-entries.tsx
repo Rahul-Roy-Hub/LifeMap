@@ -2,6 +2,24 @@ import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useUser, UserProvider } from '@/components/UserContext';
 import { useRouter } from 'expo-router';
 
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr);
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  return `${hours}:${minutes} ${ampm}`;
+}
+
 function AllEntriesContent() {
   const { entries } = useUser();
   const router = useRouter();
@@ -29,7 +47,10 @@ function AllEntriesContent() {
             }}
           >
             <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
-              {new Date(entry.created_at).toLocaleDateString()} - {entry.mood_emoji}
+              {formatDate(entry.created_at)} - {entry.mood_emoji}
+            </Text>
+            <Text style={{ color: '#6b7280', fontSize: 14, marginBottom: 2 }}>
+              {formatTime(entry.created_at)}
             </Text>
             <Text numberOfLines={2} style={{ color: '#374151', marginTop: 4 }}>
               {entry.decision}

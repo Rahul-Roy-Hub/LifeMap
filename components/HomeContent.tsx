@@ -139,24 +139,35 @@ export default function HomeContent() {
 
   const getStreakCount = (): number => {
     if (entries.length === 0) return 0;
-    
-    let streak = 0;
+
+    // Sort entries by date descending
+    const sortedEntries = [...entries].sort((a, b) => (a.date < b.date ? 1 : -1));
+    let streak = 1;
+    let prevDate = new Date(sortedEntries[0].date);
     const today = new Date();
-    
-    for (let i = 0; i < 30; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const checkDateString = formatDateForDatabase(checkDate);
-      
-      const hasEntry = entries.some(entry => entry.date === checkDateString);
-      
-      if (hasEntry) {
+    const todayString = formatDateForDatabase(today);
+
+    // If the most recent entry is not today, streak starts from that date
+    if (sortedEntries[0].date !== todayString) {
+      streak = 1;
+    }
+
+    for (let i = 1; i < sortedEntries.length; i++) {
+      const currentDate = new Date(sortedEntries[i].date);
+      const diff = Math.round((prevDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff === 1) {
         streak++;
+        prevDate = currentDate;
       } else {
         break;
       }
     }
-    
+
+    // If the most recent entry is not today, streak should be up to the last consecutive day (not including today)
+    if (sortedEntries[0].date !== todayString) {
+      return streak;
+    }
+    // If the most recent entry is today, streak includes today
     return streak;
   };
 
