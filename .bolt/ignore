@@ -51,3 +51,4 @@ app/__generated__/*
 expo-env.d.ts
 **/*.pyc
 **/__pycache__/*
+*.cpython-312.pyc
