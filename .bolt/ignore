@@ -49,3 +49,5 @@ pids/*
 .vscode-test/*
 app/__generated__/*
 expo-env.d.ts
+**/*.pyc
+**/__pycache__/*
