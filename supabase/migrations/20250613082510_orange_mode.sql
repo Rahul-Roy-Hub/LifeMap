@@ -69,15 +69,6 @@ CREATE INDEX IF NOT EXISTS journal_entries_user_id_idx ON journal_entries(user_i
 CREATE INDEX IF NOT EXISTS journal_entries_date_idx ON journal_entries(date);
 CREATE INDEX IF NOT EXISTS journal_entries_created_at_idx ON journal_entries(created_at DESC);
 
--- Create unique constraint to prevent duplicate entries per user per date
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'journal_entries_user_date_unique'
-  ) THEN
-    ALTER TABLE journal_entries ADD CONSTRAINT journal_entries_user_date_unique UNIQUE (user_id, date);
-  END IF;
-END $$;
 
 -- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

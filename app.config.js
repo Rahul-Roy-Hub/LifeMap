@@ -30,7 +30,9 @@ export default {
       "package": "your.package.name"
     },
     "extra": {
-      "openWeatherMapApiKey": process.env.OPENWEATHERMAP_API_KEY
+      "openWeatherMapApiKey": process.env.OPENWEATHERMAP_API_KEY,
+      "supabaseUrl": process.env.EXPO_PUBLIC_SUPABASE_URL,
+      "supabaseAnonKey": process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
     }
   }
 }

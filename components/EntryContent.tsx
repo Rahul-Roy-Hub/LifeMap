@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Target, Lightbulb, Heart } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@/components/UserContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight, useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
@@ -52,6 +52,8 @@ const formatDateForDatabase = (date: Date): string => {
 
 export default function EntryContent() {
   const { addEntry, updateEntry, getTodaysEntry } = useUser();
+  const searchParams = useLocalSearchParams();
+  const isNew = searchParams?.new === '1';
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [decision, setDecision] = useState('');
   const [habits, setHabits] = useState<{ [key: string]: boolean }>({
@@ -68,16 +70,15 @@ export default function EntryContent() {
   const progressValue = useSharedValue(0);
   const selectedMoodData = moodOptions.find(mood => mood.value === selectedMood);
 
-  // Get today's entry
-  const todaysEntry = getTodaysEntry();
-  const isEditing = !!todaysEntry;
+  // Get today's entry unless we're in 'new' mode
+  const todaysEntry = !isNew ? getTodaysEntry() : null;
+  const isEditing = !!todaysEntry && !isNew;
 
-  // Initialize form with existing entry data if editing
+  // Initialize form with existing entry data if editing and not in 'new' mode
   useEffect(() => {
-    if (todaysEntry) {
+    if (todaysEntry && !isNew) {
       setSelectedMood(todaysEntry.mood);
       setDecision(todaysEntry.decision);
-      
       // Parse habits safely
       const entryHabits = todaysEntry.habits as { [key: string]: boolean } | null;
       if (entryHabits && typeof entryHabits === 'object') {
@@ -86,8 +87,19 @@ export default function EntryContent() {
           ...entryHabits
         }));
       }
+    } else if (isNew) {
+      setSelectedMood(null);
+      setDecision('');
+      setHabits({
+        'Exercise': false,
+        'Meditation': false,
+        'Reading': false,
+        'Healthy Eating': false,
+        'Early Sleep': false,
+        'Gratitude': false,
+      });
     }
-  }, [todaysEntry]);
+  }, [todaysEntry, isNew]);
 
   // Haptic feedback function
   const triggerHapticFeedback = () => {
@@ -98,6 +110,8 @@ export default function EntryContent() {
 
   const handleHabitPress = (habit: string) => {
     console.log('Habit pressed:', habit);
+    console.log('Current habits state:', habits);
+    
     setHabits(prev => {
       const newState = {
         ...prev,
@@ -106,6 +120,14 @@ export default function EntryContent() {
       console.log('New habits state:', newState);
       return newState;
     });
+    
+    // Force a re-render on Android
+    if (Platform.OS === 'android') {
+      setTimeout(() => {
+        setHabits(current => ({ ...current }));
+      }, 10);
+    }
+    
     triggerHapticFeedback();
   };
 
@@ -117,6 +139,8 @@ export default function EntryContent() {
   const handleSave = async () => {
     Keyboard.dismiss();
     console.log('Save button pressed');
+    console.log('Current state - Mood:', selectedMood, 'Decision:', decision, 'Habits:', habits);
+    
     if (!selectedMood) {
       Alert.alert('Missing Information', 'Please select your mood.');
       return;
@@ -131,6 +155,8 @@ export default function EntryContent() {
         decision: decision.trim(),
         habits: habits,
       };
+
+      console.log('Entry data to save:', entryData);
 
       let result;
       if (isEditing && todaysEntry) {
@@ -564,6 +590,8 @@ export default function EntryContent() {
                 isSaving && styles.saveButtonDisabled
               ]}
               disabled={isSaving}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              delayPressIn={0}
             >
               <Check size={isLargeTablet ? 32 : isTablet ? 28 : 24} color="#ffffff" />
             </TouchableOpacity>
@@ -769,6 +797,8 @@ export default function EntryContent() {
                   ]}
                   onPress={() => handleHabitPress(habit.name)}
                   activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  delayPressIn={0}
                 >
                   <View style={styles.habitContent}>
                     <View style={[
@@ -958,14 +988,14 @@ export default function EntryContent() {
               styles.saveButtonLarge,
               isTablet && styles.saveButtonLargeTablet,
               isLargeTablet && styles.saveButtonLargeLargeTablet,
-              selectedMood && decision.trim() ? styles.saveButtonActive : null,
+              selectedMood ? styles.saveButtonActive : null,
               isSaving && styles.saveButtonDisabled
             ]} 
             onPress={handleSave}
             disabled={isSaving}
           >
             <LinearGradient
-              colors={(selectedMood && decision.trim()) && !isSaving ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
+              colors={selectedMood && !isSaving ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
               style={[
                 styles.saveButtonGradient, 
                 isTablet && styles.saveButtonGradientTablet,

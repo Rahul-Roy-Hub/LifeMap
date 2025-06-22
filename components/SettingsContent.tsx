@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { User, Crown, Globe, Bell, Shield, LogOut, ChevronRight, Sparkles, Settings as SettingsIcon, CircleHelp as HelpCircle, Mail, FileText, ArrowRight, CreditCard as Edit } from 'lucide-react-native';
 import { useUser } from '@/components/UserContext';
@@ -11,7 +10,7 @@ import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reani
 const { width } = Dimensions.get('window');
 
 export default function SettingsContent() {
-  const { subscription, setCustomDomain } = useUser();
+  const { subscription, setCustomDomain, updateSubscription } = useUser();
   const { profile, signOut } = useAuthContext();
   const [customDomainInput, setCustomDomainInput] = useState(subscription.customDomain || '');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -72,8 +71,30 @@ export default function SettingsContent() {
     router.push('/profile-edit');
   };
 
+  const handleCancelSubscription = async () => {
+    Alert.alert(
+      'Cancel Subscription',
+      'Are you sure you want to cancel your LifeMap Pro subscription? You will lose access to Pro features immediately.',
+      [
+        { text: 'Keep Pro', style: 'cancel' },
+        {
+          text: 'Cancel Pro',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await updateSubscription('free');
+            if (error) {
+              Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
+            } else {
+              Alert.alert('Subscription Canceled', 'You have been downgraded to the Free plan.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Enhanced Header */}
         <Animated.View entering={FadeInUp} style={styles.headerContainer}>
@@ -163,6 +184,8 @@ export default function SettingsContent() {
                   onPress={() => {
                     if (subscription.plan === 'free') {
                       router.push('/paywall');
+                    } else if (subscription.plan === 'pro') {
+                      handleCancelSubscription();
                     }
                   }}
                 >
@@ -173,8 +196,8 @@ export default function SettingsContent() {
               </View>
               <Text style={styles.subscriptionDescription}>
                 {subscription.plan === 'pro' 
-                  ? 'Unlimited entries, AI insights, and custom domains'
-                  : 'Limited to 3 entries per week'
+                  ? 'Up to 48 entries per week, AI insights, and custom domains'
+                  : 'Limited to 7 entries per week'
                 }
               </Text>
               {subscription.plan === 'pro' && (
@@ -359,7 +382,7 @@ export default function SettingsContent() {
           <Text style={styles.versionSubtext}>Made with ❤️ for personal growth</Text>
         </Animated.View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -538,7 +561,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
   },
   manageButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#3b82f6',
   },
   subscriptionButtonText: {
     fontSize: 14,

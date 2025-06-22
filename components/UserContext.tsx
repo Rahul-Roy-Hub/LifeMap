@@ -66,7 +66,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const subscription: UserSubscription = {
     plan: profile?.subscription_plan || 'free',
     entriesThisWeek: thisWeekEntries.length,
-    maxEntriesPerWeek: 999, // Unlimited for all users now
+    maxEntriesPerWeek: 48, // 48 Entries for Prousers now
     entriesThisMonth: thisMonthEntries.length,
     maxEntriesPerMonth: 30, // Both free and pro users get 30 entries per month
     customDomain: profile?.custom_domain || undefined,

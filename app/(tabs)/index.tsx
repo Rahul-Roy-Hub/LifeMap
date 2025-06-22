@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthContext } from '@/components/AuthProvider';
 import { UserProvider } from '@/components/UserContext';
 import HomeContent from '@/components/HomeContent';
@@ -17,7 +18,9 @@ export default function HomePage() {
 
   return (
     <UserProvider>
-      <HomeContent />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['left', 'right', 'top']}>
+        <HomeContent />
+      </SafeAreaView>
     </UserProvider>
   );
 }

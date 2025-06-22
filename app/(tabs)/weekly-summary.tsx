@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WeeklySummary } from '../../components/WeeklySummary';
 import { useAuthContext } from '@/components/AuthProvider';
 import AuthScreen from '@/components/AuthScreen';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function WeeklySummaryScreen() {
   const { user, loading } = useAuthContext();
@@ -27,7 +30,29 @@ export default function WeeklySummaryScreen() {
 
   return (
     <View style={styles.container}>
-      <WeeklySummary startDate={startDate} endDate={endDate} />
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        {/* Header */}
+        <Animated.View entering={FadeInUp} style={styles.headerContainer}>
+          <LinearGradient
+            colors={['#667eea', '#764ba2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.headerTitle}>Weekly Summary</Text>
+                <Text style={styles.headerSubtitle}>AI-powered insights from your journal</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          <WeeklySummary startDate={startDate} endDate={endDate} />
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -35,6 +60,33 @@ export default function WeeklySummaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
+  },
+  headerContainer: {
+    marginBottom: 24,
+  },
+  headerGradient: {
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 32,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#e2e8f0',
+    lineHeight: 24,
+  },
+  content: {
+    flex: 1,
   },
 }); 

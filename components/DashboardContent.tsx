@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, Calendar, Target, Sparkles, ChartBar as BarChart3, Activity, Award, ArrowRight } from 'lucide-react-native';
 import { useUser } from '@/components/UserContext';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import PieChart from 'react-native-pie-chart';
+import { useEffect, useState } from 'react';
 
 const { width } = Dimensions.get('window');
 
@@ -49,8 +49,27 @@ export default function DashboardContent() {
     id: habit,
   }));
 
+  // Motivational tips/quotes for Pro users
+  const motivationalTips = [
+    "Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.",
+    "Every day is a new beginning. Take a deep breath, smile, and start again.",
+    "Small steps every day lead to big results.",
+    "Your journey is unique—embrace every moment.",
+    "Progress, not perfection. Celebrate your wins, no matter how small.",
+    "You are capable of amazing things!",
+    "Stay positive, work hard, and make it happen.",
+    "Growth is a journey, not a destination.",
+    "Let your dreams be bigger than your fears.",
+    "Consistency is the key to success."
+  ];
+  const [tip, setTip] = useState("");
+  useEffect(() => {
+    setTip(motivationalTips[Math.floor(Math.random() * motivationalTips.length)]);
+    // eslint-disable-next-line
+  }, []);
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Enhanced Header */}
         <Animated.View entering={FadeInUp} style={styles.headerContainer}>
@@ -98,14 +117,17 @@ export default function DashboardContent() {
             </View>
             <Text style={styles.subscriptionText}>
               {subscription.plan === 'pro' 
-                ? `${subscription.entriesThisMonth}/${subscription.maxEntriesPerMonth} entries this month • AI insights • Custom domains`
+                ? `${subscription.entriesThisWeek}/${subscription.maxEntriesPerWeek} entries this week • AI insights • Custom domains`
                 : `${subscription.entriesThisMonth}/${subscription.maxEntriesPerMonth} entries this month • 1 daily entry (editable)`
               }
             </Text>
             <View style={styles.usageBar}>
               <View style={[
                 styles.usageBarFill,
-                { width: `${Math.min((subscription.entriesThisMonth / subscription.maxEntriesPerMonth) * 100, 100)}%` }
+                { width: subscription.plan === 'pro'
+                    ? `${Math.min((subscription.entriesThisWeek / subscription.maxEntriesPerWeek) * 100, 100)}%`
+                    : `${Math.min((subscription.entriesThisMonth / subscription.maxEntriesPerMonth) * 100, 100)}%`
+                  }
               ]} />
             </View>
           </LinearGradient>
@@ -164,8 +186,12 @@ export default function DashboardContent() {
 
         {/* Enhanced Mood Overview */}
         <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Mood Analysis</Text>
-          <View style={styles.moodCard}>
+          </View>
+          <View style={{ paddingHorizontal: 20 }}> 
+          </View>
+          <View style={[styles.moodCard, { marginTop: 8 }]}>
             <View style={styles.moodDisplay}>
               <Text style={styles.moodEmoji}>{getMoodEmoji(averageMood)}</Text>
               <View style={styles.moodInfo}>
@@ -246,20 +272,23 @@ export default function DashboardContent() {
         {/* AI Summary (Pro Feature) */}
         {subscription.plan === 'pro' && (
           <Animated.View entering={FadeInDown.delay(500)} style={styles.section}>
-            <Text style={styles.sectionTitle}>AI Weekly Summary</Text>
-            <View style={styles.summaryCard}>
+            <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Weekly Motivation</Text>
+            </View>
+            <View style={{ paddingHorizontal: 20 }}></View>
+            <View style={[styles.summaryCard, { marginTop: 8 }]}>
               <LinearGradient
                 colors={['#f0f9ff', '#e0f2fe']}
                 style={styles.summaryGradient}
               >
                 <View style={styles.summaryHeader}>
                   <Sparkles size={20} color="#0ea5e9" />
-                  <Text style={styles.summaryTitle}>Personalized Insights</Text>
+                  <Text style={styles.summaryTitle}>Personalized Tip</Text>
                   <View style={styles.aiPoweredBadge}>
                     <Text style={styles.aiPoweredText}>AI</Text>
                   </View>
                 </View>
-                <Text style={styles.summaryText}>{getWeeklySummary()}</Text>
+                <Text style={styles.summaryText}>{tip}</Text>
               </LinearGradient>
             </View>
           </Animated.View>
@@ -302,7 +331,7 @@ export default function DashboardContent() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

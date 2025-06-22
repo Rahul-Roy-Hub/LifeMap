@@ -7,9 +7,10 @@ import { useAuthContext } from '@/components/AuthProvider';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfileEditScreen() {
-  const { profile, updateProfile } = useAuthContext();
+  const { profile, updateProfile, user } = useAuthContext();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ export default function ProfileEditScreen() {
 
     setLoading(true);
     try {
+      console.log('Profile updated with avatar_url:', avatarUrl);
       const { error } = await updateProfile({
         full_name: fullName.trim(),
         avatar_url: avatarUrl,
@@ -39,6 +41,49 @@ export default function ProfileEditScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const uploadImageToSupabase = async (uri: string) => {
+    if (!user) return null;
+
+    const ext = uri.split('.').pop();
+    const fileName = `avatar.${ext}`;
+    const filePath = `${user.id}/${fileName}`;
+    const fileType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+    // Get the access token
+    const { data, error } = await supabase.auth.getSession();
+    const accessToken = data?.session?.access_token;
+    if (!accessToken) {
+      Alert.alert('Upload Error', 'No access token found');
+      return null;
+    }
+
+    // Fetch the file as a blob
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    // Upload using PUT and the blob as the body
+    const res = await fetch(
+      `https://zsmavfjaxqcpznjutout.supabase.co/storage/v1/object/profile-pictures/${filePath}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': fileType,
+          'x-upsert': 'true',
+        },
+        body: blob,
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      Alert.alert('Upload Error', errText);
+      return null;
+    }
+
+    return `https://zsmavfjaxqcpznjutout.supabase.co/storage/v1/object/public/profile-pictures/${filePath}`;
   };
 
   const pickImage = async () => {
@@ -78,7 +123,15 @@ export default function ProfileEditScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setAvatarUrl(result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        setLoading(true);
+        const uploadedUrl = await uploadImageToSupabase(localUri);
+        setLoading(false);
+        if (uploadedUrl) {
+          const cacheBustedUrl = `${uploadedUrl}?t=${Date.now()}`;
+          setAvatarUrl(cacheBustedUrl);
+          console.log('New avatar URL:', cacheBustedUrl);
+        }
       }
     }
   };
@@ -100,10 +153,19 @@ export default function ProfileEditScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setAvatarUrl(result.assets[0].uri);
+      const localUri = result.assets[0].uri;
+      setLoading(true);
+      const uploadedUrl = await uploadImageToSupabase(localUri);
+      setLoading(false);
+      if (uploadedUrl) {
+        const cacheBustedUrl = `${uploadedUrl}?t=${Date.now()}`;
+        setAvatarUrl(cacheBustedUrl);
+        console.log('New avatar URL:', cacheBustedUrl);
+      }
     }
   };
 
@@ -111,12 +173,12 @@ export default function ProfileEditScreen() {
     const options = Platform.OS === 'web' 
       ? [
           { text: 'Enter URL', onPress: pickImage },
-          { text: 'Cancel', style: 'cancel' }
+          { text: 'Cancel', style: 'cancel' as const }
         ]
       : [
           { text: 'Choose from Library', onPress: pickImage },
           { text: 'Take Photo', onPress: takePhoto },
-          { text: 'Cancel', style: 'cancel' }
+          { text: 'Cancel', style: 'cancel' as const }
         ];
 
     Alert.alert('Profile Picture', 'How would you like to set your profile picture?', options);

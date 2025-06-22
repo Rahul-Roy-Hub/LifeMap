@@ -97,10 +97,10 @@ export function useJournalEntries() {
       
       const { data, error } = await supabase
         .from('journal_entries')
-        .upsert({
+        .insert({
           ...entryData,
           user_id: user.id,
-        }, { onConflict: 'user_id,date' })
+        })
         .select()
         .single();
 
