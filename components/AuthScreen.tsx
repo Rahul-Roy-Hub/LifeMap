@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,10 +27,18 @@ export default function AuthScreen() {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const handleAuth = async () => {
     if (!email.trim() || (!isResetPassword && !password.trim())) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    // Prevent spaces in password during sign up
+    if (isSignUp && /\s/.test(password)) {
+      Alert.alert('Error', 'Password cannot contain spaces');
+      setLoading(false);
       return;
     }
 
@@ -105,11 +115,36 @@ export default function AuthScreen() {
               style={styles.headerGradient}
             >
               <View style={styles.header}>
+                {/* Black Circle in Top Right as Hyperlink */}
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: 0, right: 0, zIndex: 10 }}
+                  onPress={() => Linking.openURL('https://bolt.new/')}
+                  activeOpacity={0.7}
+                >
+                  <Image
+                    source={require('../assets/images/black_circle_360x360.png')}
+                    style={styles.blackCircle}
+                  />
+                </TouchableOpacity>
                 <View style={styles.logoContainer}>
-                  <Sparkles size={32} color="#ffffff" />
+                  <View style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: '#fb923c',
+                  }}>
+                    <Image source={require('../assets/images/LifeMapLogo.png')} style={{ width: 56, height: 56, borderRadius: 28, resizeMode: 'contain' }} />
+                  </View>
                 </View>
                 <Text style={styles.appTitle}>LifeMap</Text>
-                <Text style={styles.appSubtitle}>Your personal growth journey</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={styles.appSubtitle}>Your personal growth journey</Text>
+                  <Text style={{ fontSize: 18, marginLeft: 6 }}>🌱</Text>
+                </View>
               </View>
             </LinearGradient>
           </Animated.View>
@@ -130,7 +165,10 @@ export default function AuthScreen() {
 
               <View style={styles.inputContainer}>
                 {isSignUp && (
-                  <View style={styles.inputWrapper}>
+                  <View style={[
+                    styles.inputWrapper,
+                    focusedInput === 'fullName' && { borderColor: '#fb923c', borderWidth: 2 }
+                  ]}>
                     <View style={styles.inputIcon}>
                       <User size={20} color="#64748b" />
                     </View>
@@ -142,11 +180,16 @@ export default function AuthScreen() {
                       onChangeText={setFullName}
                       autoCapitalize="words"
                       autoCorrect={false}
+                      onFocus={() => setFocusedInput('fullName')}
+                      onBlur={() => setFocusedInput(null)}
                     />
                   </View>
                 )}
 
-                <View style={styles.inputWrapper}>
+                <View style={[
+                  styles.inputWrapper,
+                  focusedInput === 'email' && { borderColor: '#fb923c', borderWidth: 2 }
+                ]}>
                   <View style={styles.inputIcon}>
                     <Mail size={20} color="#64748b" />
                   </View>
@@ -159,11 +202,16 @@ export default function AuthScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    onFocus={() => setFocusedInput('email')}
+                    onBlur={() => setFocusedInput(null)}
                   />
                 </View>
 
                 {!isResetPassword && (
-                  <View style={styles.inputWrapper}>
+                  <View style={[
+                    styles.inputWrapper,
+                    focusedInput === 'password' && { borderColor: '#fb923c', borderWidth: 2 }
+                  ]}>
                     <View style={styles.inputIcon}>
                       <Lock size={20} color="#64748b" />
                     </View>
@@ -172,10 +220,12 @@ export default function AuthScreen() {
                       placeholder="Password"
                       placeholderTextColor="#9ca3af"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={text => setPassword(text.replace(/\s/g, ''))}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
+                      onFocus={() => setFocusedInput('password')}
+                      onBlur={() => setFocusedInput(null)}
                     />
                     <TouchableOpacity
                       style={styles.passwordToggle}
@@ -436,5 +486,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#1e293b',
     flex: 1,
+  },
+  blackCircle: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 56,
+    height: 56,
+    zIndex: 10,
   },
 });

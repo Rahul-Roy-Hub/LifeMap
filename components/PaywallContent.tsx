@@ -91,7 +91,7 @@ export default function PaywallContent() {
           onPress: () => {
             updateSubscription('pro');
             Alert.alert('Welcome to Pro!', 'You now have access to all Pro features.', [
-              { text: 'OK', onPress: () => router.back() }
+              { text: 'OK', onPress: () => router.replace('/') }
             ]);
           }
         }
@@ -138,7 +138,7 @@ export default function PaywallContent() {
             style={styles.headerGradient}
           >
             <View style={[styles.header, isTablet && styles.headerTablet]}>
-              <TouchableOpacity onPress={() => router.back()} style={[styles.closeButton, isTablet && styles.closeButtonTablet]}>
+              <TouchableOpacity onPress={() => router.replace('/')} style={[styles.closeButton, isTablet && styles.closeButtonTablet]}>
                 <X size={isTablet ? 28 : 24} color="#ffffff" />
               </TouchableOpacity>
               <View style={styles.headerContent}>

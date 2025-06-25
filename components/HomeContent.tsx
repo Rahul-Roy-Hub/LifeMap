@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, ColorValue } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, ColorValue, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Heart, Target, TrendingUp, Calendar, Sparkles, ArrowRight, Zap, Award, Activity, User, CreditCard as Edit } from 'lucide-react-native';
 import { router, useRouter } from 'expo-router';
@@ -258,6 +258,17 @@ export default function HomeContent() {
             style={styles.headerGradient}
           >
             <View style={styles.header}>
+              {/* Black Circle in Top Right as Hyperlink */}
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 0, right: 0, zIndex: 10 }}
+                onPress={() => Linking.openURL('https://bolt.new/')}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={require('../assets/images/black_circle_360x360.png')}
+                  style={styles.blackCircle}
+                />
+              </TouchableOpacity>
               <View style={styles.headerContent}>
                 <Text style={styles.greeting}>Good {getTimeOfDay()}</Text>
                 <Text style={styles.welcomeText}>{getMotivationalMessage()}</Text>
@@ -266,20 +277,20 @@ export default function HomeContent() {
                 <View style={styles.moodWeather}>
                   {/* Real-time weather display */}
                   {weather ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
                       <Image
                         source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
-                        style={{ width: 32, height: 32, marginRight: 4 }}
+                        style={{ width: 24, height: 24, marginRight: 2 }}
                       />
-                      <Text style={{ color: '#fff', fontFamily: 'Inter-Medium', fontSize: 14, marginRight: 4 }}>
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-Medium', fontSize: 12, marginRight: 2 }}>
                         {Math.round(weather.temp)}°C
                       </Text>
-                      <Text style={{ color: '#fff', fontFamily: 'Inter-Regular', fontSize: 13, textTransform: 'capitalize' }}>
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-Regular', fontSize: 11, textTransform: 'capitalize' }}>
                         {weather.description}
                       </Text>
                     </View>
                   ) : weatherError ? (
-                    <Text style={{ color: '#fff', fontSize: 12, marginRight: 8 }}>{weatherError}</Text>
+                    <Text style={{ color: '#fff', fontSize: 10, marginRight: 6 }}>{weatherError}</Text>
                   ) : null}
                   {/* Mood-based indicator (keep as well) */}
                   <Text style={styles.moodWeatherEmoji}>
@@ -679,17 +690,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     alignSelf: 'flex-start',
+    minHeight: 32,
   },
   moodWeatherEmoji: {
-    fontSize: 16,
-    marginRight: 8,
+    fontSize: 13,
+    marginRight: 5,
   },
   moodWeatherText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#ffffff',
   },
@@ -1179,5 +1191,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+  },
+  blackCircle: {
+    position: 'absolute',
+    top: 120,
+    right: 20,
+    width: 56,
+    height: 56,
+    zIndex: 10,
   },
 });

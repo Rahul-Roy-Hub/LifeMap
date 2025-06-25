@@ -5,19 +5,19 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Get environment variables for different platforms
-const getSupabaseUrl = () => {
+const getSupabaseUrl = (): string => {
   if (Platform.OS === 'web') {
-    return process.env.EXPO_PUBLIC_SUPABASE_URL!;
+    return process.env.EXPO_PUBLIC_SUPABASE_URL || '';
   } else {
-    return Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL!;
+    return Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
   }
 };
 
-const getSupabaseAnonKey = () => {
+const getSupabaseAnonKey = (): string => {
   if (Platform.OS === 'web') {
-    return process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+    return process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
   } else {
-    return Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+    return Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
   }
 };
 
@@ -29,10 +29,25 @@ console.log('Platform:', Platform.OS);
 console.log('Supabase URL length:', supabaseUrl?.length || 0);
 console.log('Supabase Key length:', supabaseAnonKey?.length || 0);
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Check if we have valid credentials
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ Supabase credentials not found. Please add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file');
+  console.warn('For now, using placeholder values to prevent app crash');
+}
+
+// Use placeholder values if credentials are missing to prevent app crash
+const finalSupabaseUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const finalSupabaseAnonKey = supabaseAnonKey || 'placeholder-key';
+
+export const supabase = createClient<Database>(finalSupabaseUrl, finalSupabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
   },
 });
+
+// Export a function to check if Supabase is properly configured
+export const isSupabaseConfigured = (): boolean => {
+  return !!(supabaseUrl && supabaseAnonKey);
+};

@@ -9,14 +9,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { ChatService } from '../lib/chatService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Add a simple robot icon component
+// Replace BotIcon with LifeMap logo
 const BotIcon = () => (
   <View style={styles.botIconContainer}>
-    <Text style={styles.botIcon}>🤖</Text>
+    <Image
+      source={require('../assets/images/LifeMapLogo.png')}
+      style={styles.botLogo}
+      resizeMode="contain"
+    />
   </View>
 );
 
@@ -33,6 +39,9 @@ export const ChatInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const chatService = ChatService.getInstance();
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 140; // Match your tab bar height in _layout.tsx
+  const keyboardVerticalOffset = TAB_BAR_HEIGHT + insets.bottom;
 
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -119,13 +128,14 @@ export const ChatInterface: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <ScrollView
         ref={scrollViewRef}
         style={styles.messagesContainer}
         contentContainerStyle={styles.messagesContent}
+        keyboardShouldPersistTaps="handled"
       >
         {messages.map(renderMessage)}
         {isLoading && (
@@ -192,9 +202,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+    borderWidth: 2,
+    borderColor: '#fb923c',
   },
-  botIcon: {
-    fontSize: 20,
+  botLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   messageBubble: {
     padding: 16,

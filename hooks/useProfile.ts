@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
 import { useAuth } from './useAuth';
@@ -9,46 +9,69 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (user) {
       fetchProfile();
     } else {
       // Clear profile when user is null (signed out)
-      setProfile(null);
-      setLoading(false);
+      if (mountedRef.current) {
+        setProfile(null);
+        setLoading(false);
+      }
     }
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [user]);
 
   const fetchProfile = async () => {
     if (!user) {
-      setProfile(null);
-      setLoading(false);
+      if (mountedRef.current) {
+        setProfile(null);
+        setLoading(false);
+      }
       return;
     }
 
     try {
-      setLoading(true);
+      if (mountedRef.current) {
+        setLoading(true);
+      }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
+      if (!mountedRef.current) return;
+
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create one
         await createProfile();
       } else if (error) {
         console.error('Error fetching profile:', error);
-        setProfile(null);
+        if (mountedRef.current) {
+          setProfile(null);
+        }
       } else {
-        setProfile(data);
+        if (mountedRef.current) {
+          setProfile(data);
+        }
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
-      setProfile(null);
+      if (mountedRef.current) {
+        setProfile(null);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -67,15 +90,23 @@ export function useProfile() {
         .select()
         .single();
 
+      if (!mountedRef.current) return;
+
       if (error) {
         console.error('Error creating profile:', error);
-        setProfile(null);
+        if (mountedRef.current) {
+          setProfile(null);
+        }
       } else {
-        setProfile(data);
+        if (mountedRef.current) {
+          setProfile(data);
+        }
       }
     } catch (error) {
       console.error('Error in createProfile:', error);
-      setProfile(null);
+      if (mountedRef.current) {
+        setProfile(null);
+      }
     }
   };
 
@@ -93,11 +124,15 @@ export function useProfile() {
         .select()
         .single();
 
+      if (!mountedRef.current) return { error: 'Component unmounted' };
+
       if (error) {
         console.error('Error updating profile:', error);
         return { error };
       } else {
-        setProfile(data);
+        if (mountedRef.current) {
+          setProfile(data);
+        }
         return { data };
       }
     } catch (error) {

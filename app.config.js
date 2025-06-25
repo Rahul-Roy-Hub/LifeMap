@@ -27,7 +27,8 @@ export default {
       "typedRoutes": true
     },
     "android": {
-      "package": "your.package.name"
+      "package": "app.lifemap.journal"
+
     },
     "extra": {
       "openWeatherMapApiKey": process.env.OPENWEATHERMAP_API_KEY,

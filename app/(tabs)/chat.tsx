@@ -1,13 +1,18 @@
 import React from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, Image, TouchableOpacity, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatInterface } from '../../components/ChatInterface';
 import { useAuthContext } from '@/components/AuthProvider';
 import AuthScreen from '@/components/AuthScreen';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { UserProvider, useUser } from '@/components/UserContext';
+import { useRouter } from 'expo-router';
 
 export default function ChatScreen() {
   const { user, loading } = useAuthContext();
+  const { subscription } = useUser();
+  const router = useRouter();
 
   if (loading) {
     return <View style={{ flex: 1, backgroundColor: '#fff' }} />;
@@ -17,9 +22,14 @@ export default function ChatScreen() {
     return <AuthScreen />;
   }
 
+  if (!loading && subscription.plan !== 'pro') {
+    router.replace('/paywall');
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <UserProvider>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {/* Header */}
         <Animated.View entering={FadeInUp} style={styles.headerContainer}>
           <LinearGradient
@@ -29,6 +39,16 @@ export default function ChatScreen() {
             style={styles.headerGradient}
           >
             <View style={styles.header}>
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 10, right: 20, zIndex: 10 }}
+                onPress={() => Linking.openURL('https://bolt.new/')}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={require('../../assets/images/black_circle_360x360.png')}
+                  style={{ width: 56, height: 56 }}
+                />
+              </TouchableOpacity>
               <View>
                 <Text style={styles.headerTitle}>AI Chat</Text>
                 <Text style={styles.headerSubtitle}>Your personal growth companion</Text>
@@ -36,17 +56,20 @@ export default function ChatScreen() {
             </View>
           </LinearGradient>
         </Animated.View>
-
         {/* Content */}
         <View style={styles.content}>
           <ChatInterface />
         </View>
-      </ScrollView>
-    </View>
+      </SafeAreaView>
+    </UserProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',

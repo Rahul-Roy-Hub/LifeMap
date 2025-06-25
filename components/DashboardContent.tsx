@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Linking, Image } from 'react-native';
 import { TrendingUp, Calendar, Target, Sparkles, ChartBar as BarChart3, Activity, Award, ArrowRight } from 'lucide-react-native';
 import { useUser } from '@/components/UserContext';
 import { router } from 'expo-router';
@@ -80,6 +80,16 @@ export default function DashboardContent() {
             style={styles.headerGradient}
           >
             <View style={styles.header}>
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 30, right: 100, zIndex: 10 }}
+                onPress={() => Linking.openURL('https://bolt.new/')}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={require('../assets/images/black_circle_360x360.png')}
+                  style={{ width: 56, height: 56 }}
+                />
+              </TouchableOpacity>
               <View>
                 <Text style={styles.headerTitle}>Dashboard</Text>
                 <Text style={styles.headerSubtitle}>Your personal growth insights</Text>

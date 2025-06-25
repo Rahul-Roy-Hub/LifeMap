@@ -9,3 +9,8 @@ declare global {
 
 // Ensure this file is treated as a module
 export {};
+
+declare module "*.png" {
+  const value: any;
+  export default value;
+}

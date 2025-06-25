@@ -1,6 +1,9 @@
-import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useUser, UserProvider } from '@/components/UserContext';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -25,40 +28,46 @@ function AllEntriesContent() {
   const router = useRouter();
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-      <View style={{ padding: 20 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#667eea', fontWeight: 'bold', fontSize: 16 }}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 16 }}>All Reflections</Text>
-        {entries.map(entry => (
-          <TouchableOpacity
-            key={entry.id}
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 12,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <ScrollView style={styles.container}>
+        {/* Header */}
+        <Animated.View entering={FadeInUp} style={styles.headerContainer}>
+          <LinearGradient
+            colors={['#667eea', '#764ba2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
           >
-            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
-              {formatDate(entry.created_at)} - {entry.mood_emoji}
-            </Text>
-            <Text style={{ color: '#6b7280', fontSize: 14, marginBottom: 2 }}>
-              {formatTime(entry.created_at)}
-            </Text>
-            <Text numberOfLines={2} style={{ color: '#374151', marginTop: 4 }}>
-              {entry.decision}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Text style={styles.backButtonText}>← Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>All Reflections</Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          {entries.map(entry => (
+            <TouchableOpacity
+              key={entry.id}
+              style={styles.entryCard}
+            >
+              <Text style={styles.entryDate}>
+                {formatDate(entry.created_at)} - {entry.mood_emoji}
+              </Text>
+              <Text style={styles.entryTime}>
+                {formatTime(entry.created_at)}
+              </Text>
+              <Text numberOfLines={2} style={styles.entryText}>
+                {entry.decision}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -68,4 +77,72 @@ export default function AllEntriesScreen() {
       <AllEntriesContent />
     </UserProvider>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  headerContainer: {
+    marginBottom: 24,
+  },
+  headerGradient: {
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 32,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+    marginTop: 8,
+  },
+  backButton: {
+    marginBottom: 8,
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+  },
+  content: {
+    padding: 20,
+  },
+  entryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  entryDate: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#1e293b',
+  },
+  entryTime: {
+    color: '#6b7280',
+    fontSize: 14,
+    marginBottom: 2,
+    fontFamily: 'Inter-Regular',
+  },
+  entryText: {
+    color: '#374151',
+    marginTop: 4,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+  },
+}); 

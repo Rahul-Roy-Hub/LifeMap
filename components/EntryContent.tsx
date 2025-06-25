@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Target, Lightbulb, Heart } from 'lucide-react-native';
@@ -626,394 +626,404 @@ export default function EntryContent() {
         </LinearGradient>
       </Animated.View>
 
-      <ScrollView 
-        style={styles.content} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent, 
-          isTablet && styles.scrollContentTablet,
-          isLargeTablet && styles.scrollContentLargeTablet
-        ]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Enhanced Mood Section with Perfect Responsive Design */}
-        <Animated.View entering={FadeInDown.delay(100)} style={[
-          styles.section, 
-          isTablet && styles.sectionTablet,
-          isLargeTablet && styles.sectionLargeTablet
-        ]}>
-          <View style={styles.sectionHeader}>
-            <Heart size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#ef4444" />
-            <Text style={[
-              styles.sectionTitle, 
-              isTablet && styles.sectionTitleTablet,
-              isLargeTablet && styles.sectionTitleLargeTablet
-            ]}>
-              How do you feel today?
-            </Text>
-          </View>
-          <Text style={[
-            styles.sectionSubtitle, 
-            isTablet && styles.sectionSubtitleTablet,
-            isLargeTablet && styles.sectionSubtitleLargeTablet
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.scrollContent, 
+            isTablet && styles.scrollContentTablet,
+            isLargeTablet && styles.scrollContentLargeTablet
+          ]}
+        >
+          {/* Enhanced Mood Section with Perfect Responsive Design */}
+          <Animated.View entering={FadeInDown.delay(100)} style={[
+            styles.section, 
+            isTablet && styles.sectionTablet,
+            isLargeTablet && styles.sectionLargeTablet
           ]}>
-            Your emotional state is the foundation of growth
-          </Text>
-          
-          {/* Responsive Mood Selection */}
-          <View style={styles.moodContainer}>
-            {renderMoodOptions()}
-          </View>
-        </Animated.View>
-
-        {/* Decision Section with enhanced responsive design */}
-        <Animated.View entering={FadeInDown.delay(300)} style={[
-          styles.section, 
-          isTablet && styles.sectionTablet,
-          isLargeTablet && styles.sectionLargeTablet
-        ]}>
-          <View style={styles.sectionHeader}>
-            <Lightbulb size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#f59e0b" />
-            <Text style={[
-              styles.sectionTitle, 
-              isTablet && styles.sectionTitleTablet,
-              isLargeTablet && styles.sectionTitleLargeTablet
-            ]}>
-              Reflect on your day
-            </Text>
-          </View>
-          <Text style={[
-            styles.sectionSubtitle, 
-            isTablet && styles.sectionSubtitleTablet,
-            isLargeTablet && styles.sectionSubtitleLargeTablet
-          ]}>
-            What shaped your journey today?
-          </Text>
-          
-          <View style={[
-            styles.promptCard, 
-            isTablet && styles.promptCardTablet,
-            isLargeTablet && styles.promptCardLargeTablet
-          ]}>
-            <Text style={[
-              styles.promptText, 
-              isTablet && styles.promptTextTablet,
-              isLargeTablet && styles.promptTextLargeTablet
-            ]}>
-              💭 {currentPrompt}
-            </Text>
-          </View>
-          
-          <View style={styles.textInputContainer}>
-            <TextInput
-              style={[
-                styles.textInput, 
-                isTablet && styles.textInputTablet,
-                isLargeTablet && styles.textInputLargeTablet,
-                decision.length > 0 && {
-                  borderColor: '#f97316',
-                  borderWidth: 2,
-                }
-              ]}
-              multiline
-              numberOfLines={isLargeTablet ? 10 : isTablet ? 8 : 6}
-              placeholder="Share your thoughts, decisions, and reflections from today. What mattered most to you?"
-              placeholderTextColor="#9ca3af"
-              value={decision}
-              onChangeText={setDecision}
-              maxLength={1000}
-            />
-            <View style={styles.inputFooter}>
-              <View style={styles.characterCount}>
-                <Text style={[
-                  styles.characterCountText, 
-                  isTablet && styles.characterCountTextTablet,
-                  isLargeTablet && styles.characterCountTextLargeTablet
-                ]}>
-                  {decision.length}/1000
-                </Text>
-              </View>
-              <View style={[
-                styles.inputProgress,
-                decision.length > 0 && styles.inputProgressActive
+            <View style={styles.sectionHeader}>
+              <Heart size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#ef4444" />
+              <Text style={[
+                styles.sectionTitle, 
+                isTablet && styles.sectionTitleTablet,
+                isLargeTablet && styles.sectionTitleLargeTablet
               ]}>
-                <View style={[
-                  styles.inputProgressBar,
-                  { width: `${Math.min((decision.length / 200) * 100, 100)}%` }
-                ]} />
-              </View>
+                How do you feel today?
+              </Text>
             </View>
-          </View>
-        </Animated.View>
-
-        {/* Enhanced Habits Section with responsive layout */}
-        <Animated.View entering={FadeInDown.delay(400)} style={[
-          styles.section, 
-          isTablet && styles.sectionTablet,
-          isLargeTablet && styles.sectionLargeTablet
-        ]}>
-          <View style={styles.sectionHeader}>
-            <Target size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#10b981" />
             <Text style={[
-              styles.sectionTitle, 
-              isTablet && styles.sectionTitleTablet,
-              isLargeTablet && styles.sectionTitleLargeTablet
+              styles.sectionSubtitle, 
+              isTablet && styles.sectionSubtitleTablet,
+              isLargeTablet && styles.sectionSubtitleLargeTablet
             ]}>
-              Daily Habits
+              Your emotional state is the foundation of growth
             </Text>
-          </View>
-          <Text style={[
-            styles.sectionSubtitle, 
-            isTablet && styles.sectionSubtitleTablet,
-            isLargeTablet && styles.sectionSubtitleLargeTablet
-          ]}>
-            Building consistency <Text>•</Text> {completedHabits}/{defaultHabits.length} completed
-          </Text>
-          
-          <View style={[
-            styles.habitsGrid,
-            isLargeTablet && styles.habitsGridLargeTablet,
-            isTablet && styles.habitsGridTablet,
-            { gap: habitsLayout.gap }
-          ]}>
-            {defaultHabits.map((habit, index) => (
-              <Animated.View 
-                key={habit.name} 
-                entering={FadeInDown.delay(500 + index * 50)}
-                style={[
-                  isLargeTablet ? styles.habitItemLargeTablet : 
-                  isTablet ? styles.habitItemTablet : 
-                  styles.habitItemMobile
-                ]}
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.habitOption,
-                    isLargeTablet && styles.habitOptionLargeTablet,
-                    isTablet && styles.habitOptionTablet,
-                    habits[habit.name] && [
-                      styles.habitOptionSelected,
-                      { borderColor: habit.color }
-                    ]
-                  ]}
-                  onPress={() => handleHabitPress(habit.name)}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  delayPressIn={0}
-                >
-                  <View style={styles.habitContent}>
-                    <View style={[
-                      styles.habitIcon,
-                      isLargeTablet && styles.habitIconLargeTablet,
-                      isTablet && styles.habitIconTablet,
-                      habits[habit.name] && { backgroundColor: habit.color }
-                    ]}>
-                      <Text style={[
-                        styles.habitEmoji, 
-                        isLargeTablet && styles.habitEmojiLargeTablet,
-                        isTablet && styles.habitEmojiTablet
-                      ]}>
-                        {habit.icon}
-                      </Text>
-                    </View>
-                    <View style={[styles.habitInfo, { flex: 1 }]}>
-                      <Text style={[
-                        styles.habitLabel,
-                        isLargeTablet && styles.habitLabelLargeTablet,
-                        isTablet && styles.habitLabelTablet,
-                        habits[habit.name] && { color: habit.color }
-                      ]}>
-                        {habit.name}
-                      </Text>
-                      <Text style={[
-                        styles.habitDescription, 
-                        isLargeTablet && styles.habitDescriptionLargeTablet,
-                        isTablet && styles.habitDescriptionTablet
-                      ]}>
-                        {habit.description}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={[
-                    styles.habitCheckbox,
-                    isLargeTablet && styles.habitCheckboxLargeTablet,
-                    isTablet && styles.habitCheckboxTablet,
-                    habits[habit.name] && [
-                      styles.habitCheckboxSelected,
-                      { backgroundColor: habit.color }
-                    ]
-                  ]}>
-                    {habits[habit.name] && (
-                      <Check size={isLargeTablet ? 24 : isTablet ? 20 : 16} color="#ffffff" />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-          </View>
-        </Animated.View>
+            
+            {/* Responsive Mood Selection */}
+            <View style={styles.moodContainer}>
+              {renderMoodOptions()}
+            </View>
+          </Animated.View>
 
-        {/* Enhanced Progress Summary */}
-        {(selectedMood || decision || completedHabits > 0) && (
-          <Animated.View entering={FadeInDown.delay(600)} style={[
-            styles.summarySection, 
-            isTablet && styles.summarySectionTablet,
-            isLargeTablet && styles.summarySectionLargeTablet
+          {/* Decision Section with enhanced responsive design */}
+          <Animated.View entering={FadeInDown.delay(300)} style={[
+            styles.section, 
+            isTablet && styles.sectionTablet,
+            isLargeTablet && styles.sectionLargeTablet
           ]}>
-            <LinearGradient
-              colors={['#f0f9ff', '#e0f2fe']}
-              style={[
-                styles.summaryGradient, 
-                isTablet && styles.summaryGradientTablet,
-                isLargeTablet && styles.summaryGradientLargeTablet
-              ]}
-            >
-              <View style={styles.summaryHeader}>
-                <Sparkles size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#0ea5e9" />
-                <Text style={[
-                  styles.summaryTitle, 
-                  isTablet && styles.summaryTitleTablet,
-                  isLargeTablet && styles.summaryTitleLargeTablet
-                ]}>
-                  Today's Progress
-                </Text>
-                <View style={[
-                  styles.summaryBadge, 
-                  isTablet && styles.summaryBadgeTablet,
-                  isLargeTablet && styles.summaryBadgeLargeTablet
-                ]}>
+            <View style={styles.sectionHeader}>
+              <Lightbulb size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#f59e0b" />
+              <Text style={[
+                styles.sectionTitle, 
+                isTablet && styles.sectionTitleTablet,
+                isLargeTablet && styles.sectionTitleLargeTablet
+              ]}>
+                Reflect on your day
+              </Text>
+            </View>
+            <Text style={[
+              styles.sectionSubtitle, 
+              isTablet && styles.sectionSubtitleTablet,
+              isLargeTablet && styles.sectionSubtitleLargeTablet
+            ]}>
+              What shaped your journey today?
+            </Text>
+            
+            <View style={[
+              styles.promptCard, 
+              isTablet && styles.promptCardTablet,
+              isLargeTablet && styles.promptCardLargeTablet
+            ]}>
+              <Text style={[
+                styles.promptText, 
+                isTablet && styles.promptTextTablet,
+                isLargeTablet && styles.promptTextLargeTablet
+              ]}>
+                💭 {currentPrompt}
+              </Text>
+            </View>
+            
+            <View style={styles.textInputContainer}>
+              <TextInput
+                style={[
+                  styles.textInput, 
+                  isTablet && styles.textInputTablet,
+                  isLargeTablet && styles.textInputLargeTablet,
+                  decision.length > 0 && {
+                    borderColor: '#f97316',
+                    borderWidth: 2,
+                  }
+                ]}
+                multiline
+                numberOfLines={isLargeTablet ? 10 : isTablet ? 8 : 6}
+                placeholder="Share your thoughts, decisions, and reflections from today. What mattered most to you?"
+                placeholderTextColor="#9ca3af"
+                value={decision}
+                onChangeText={setDecision}
+                maxLength={1000}
+              />
+              <View style={styles.inputFooter}>
+                <View style={styles.characterCount}>
                   <Text style={[
-                    styles.summaryBadgeText, 
-                    isTablet && styles.summaryBadgeTextTablet,
-                    isLargeTablet && styles.summaryBadgeTextLargeTablet
+                    styles.characterCountText, 
+                    isTablet && styles.characterCountTextTablet,
+                    isLargeTablet && styles.characterCountTextLargeTablet
                   ]}>
-                    {Math.round(progress * 100)}%
+                    {decision.length}/1000
                   </Text>
                 </View>
+                <View style={[
+                  styles.inputProgress,
+                  decision.length > 0 && styles.inputProgressActive
+                ]}>
+                  <View style={[
+                    styles.inputProgressBar,
+                    { width: `${Math.min((decision.length / 200) * 100, 100)}%` }
+                  ]} />
+                </View>
               </View>
-              <View style={styles.summaryItems}>
-                {selectedMood && (
-                  <View style={styles.summaryItem}>
-                    <Text style={[
-                      styles.summaryItemIcon, 
-                      isTablet && styles.summaryItemIconTablet,
-                      isLargeTablet && styles.summaryItemIconLargeTablet
-                    ]}>
-                      🎯
-                    </Text>
-                    <Text style={[
-                      styles.summaryItemText, 
-                      isTablet && styles.summaryItemTextTablet,
-                      isLargeTablet && styles.summaryItemTextLargeTablet
-                    ]}>
-                      Mood: {selectedMoodData?.emoji} {selectedMoodData?.label}
-                    </Text>
-                  </View>
-                )}
-                {completedHabits > 0 && (
-                  <View style={styles.summaryItem}>
-                    <Text style={[
-                      styles.summaryItemIcon, 
-                      isTablet && styles.summaryItemIconTablet,
-                      isLargeTablet && styles.summaryItemIconLargeTablet
-                    ]}>
-                      ✅
-                    </Text>
-                    <Text style={[
-                      styles.summaryItemText, 
-                      isTablet && styles.summaryItemTextTablet,
-                      isLargeTablet && styles.summaryItemTextLargeTablet
-                    ]}>
-                      Completed {completedHabits} habit{completedHabits > 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                )}
-                {decision && (
-                  <View style={styles.summaryItem}>
-                    <Text style={[
-                      styles.summaryItemIcon, 
-                      isTablet && styles.summaryItemIconTablet,
-                      isLargeTablet && styles.summaryItemIconLargeTablet
-                    ]}>
-                      💭
-                    </Text>
-                    <Text style={[
-                      styles.summaryItemText, 
-                      isTablet && styles.summaryItemTextTablet,
-                      isLargeTablet && styles.summaryItemTextLargeTablet
-                    ]}>
-                      Reflection documented ({decision.length} characters)
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </LinearGradient>
+            </View>
           </Animated.View>
-        )}
 
-        {/* Motivational Quote */}
-        <Animated.View entering={FadeInDown.delay(700)} style={[
-          styles.quoteSection, 
-          isTablet && styles.quoteSectionTablet,
-          isLargeTablet && styles.quoteSectionLargeTablet
-        ]}>
-          <LinearGradient
-            colors={['#fef7ff', '#faf5ff']}
-            style={[
-              styles.quoteGradient, 
-              isTablet && styles.quoteGradientTablet,
-              isLargeTablet && styles.quoteGradientLargeTablet
-            ]}
-          >
+          {/* Enhanced Habits Section with responsive layout */}
+          <Animated.View entering={FadeInDown.delay(400)} style={[
+            styles.section, 
+            isTablet && styles.sectionTablet,
+            isLargeTablet && styles.sectionLargeTablet
+          ]} pointerEvents="box-none">
+            <View style={styles.sectionHeader}>
+              <Target size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#10b981" />
+              <Text style={[
+                styles.sectionTitle, 
+                isTablet && styles.sectionTitleTablet,
+                isLargeTablet && styles.sectionTitleLargeTablet
+              ]}>
+                Daily Habits
+              </Text>
+            </View>
             <Text style={[
-              styles.quote, 
-              isTablet && styles.quoteTablet,
-              isLargeTablet && styles.quoteLargeTablet
+              styles.sectionSubtitle, 
+              isTablet && styles.sectionSubtitleTablet,
+              isLargeTablet && styles.sectionSubtitleLargeTablet
             ]}>
-              "The journey of a thousand miles begins with one step."
+              Building consistency <Text>•</Text> {completedHabits}/{defaultHabits.length} completed
             </Text>
-            <Text style={[
-              styles.quoteAuthor, 
-              isTablet && styles.quoteAuthorTablet,
-              isLargeTablet && styles.quoteAuthorLargeTablet
+            
+            <View style={[
+              styles.habitsGrid,
+              isLargeTablet && styles.habitsGridLargeTablet,
+              isTablet && styles.habitsGridTablet,
+              { gap: habitsLayout.gap }
             ]}>
-              - Lao Tzu
-            </Text>
-          </LinearGradient>
-        </Animated.View>
+              {defaultHabits.map((habit, index) => (
+                <Animated.View 
+                  key={habit.name} 
+                  entering={FadeInDown.delay(500 + index * 50)}
+                  style={[
+                    isLargeTablet ? styles.habitItemLargeTablet : 
+                    isTablet ? styles.habitItemTablet : 
+                    styles.habitItemMobile
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.habitOption,
+                      isLargeTablet && styles.habitOptionLargeTablet,
+                      isTablet && styles.habitOptionTablet,
+                      habits[habit.name] && [
+                        styles.habitOptionSelected,
+                        { borderColor: habit.color }
+                      ]
+                    ]}
+                    onPress={() => handleHabitPress(habit.name)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    delayPressIn={0}
+                  >
+                    <View style={styles.habitContent}>
+                      <View style={[
+                        styles.habitIcon,
+                        isLargeTablet && styles.habitIconLargeTablet,
+                        isTablet && styles.habitIconTablet,
+                        habits[habit.name] && { backgroundColor: habit.color }
+                      ]}>
+                        <Text style={[
+                          styles.habitEmoji, 
+                          isLargeTablet && styles.habitEmojiLargeTablet,
+                          isTablet && styles.habitEmojiTablet
+                        ]}>
+                          {habit.icon}
+                        </Text>
+                      </View>
+                      <View style={[styles.habitInfo, { flex: 1 }]}>
+                        <Text style={[
+                          styles.habitLabel,
+                          isLargeTablet && styles.habitLabelLargeTablet,
+                          isTablet && styles.habitLabelTablet,
+                          habits[habit.name] && { color: habit.color }
+                        ]}>
+                          {habit.name}
+                        </Text>
+                        <Text style={[
+                          styles.habitDescription, 
+                          isLargeTablet && styles.habitDescriptionLargeTablet,
+                          isTablet && styles.habitDescriptionTablet
+                        ]}>
+                          {habit.description}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[
+                      styles.habitCheckbox,
+                      isLargeTablet && styles.habitCheckboxLargeTablet,
+                      isTablet && styles.habitCheckboxTablet,
+                      habits[habit.name] && [
+                        styles.habitCheckboxSelected,
+                        { backgroundColor: habit.color }
+                      ]
+                    ]}>
+                      {habits[habit.name] && (
+                        <Check size={isLargeTablet ? 24 : isTablet ? 20 : 16} color="#ffffff" />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>
 
-        {/* Save Button */}
-        <Animated.View entering={FadeInDown.delay(800)} style={styles.saveSection}>
-          <TouchableOpacity 
-            style={[
-              styles.saveButtonLarge,
-              isTablet && styles.saveButtonLargeTablet,
-              isLargeTablet && styles.saveButtonLargeLargeTablet,
-              selectedMood ? styles.saveButtonActive : null,
-              isSaving && styles.saveButtonDisabled
-            ]} 
-            onPress={handleSave}
-            disabled={isSaving}
-          >
+          {/* Enhanced Progress Summary */}
+          {(selectedMood || decision || completedHabits > 0) && (
+            <Animated.View entering={FadeInDown.delay(600)} style={[
+              styles.summarySection, 
+              isTablet && styles.summarySectionTablet,
+              isLargeTablet && styles.summarySectionLargeTablet
+            ]}>
+              <LinearGradient
+                colors={['#f0f9ff', '#e0f2fe']}
+                style={[
+                  styles.summaryGradient, 
+                  isTablet && styles.summaryGradientTablet,
+                  isLargeTablet && styles.summaryGradientLargeTablet
+                ]}
+              >
+                <View style={styles.summaryHeader}>
+                  <Sparkles size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#0ea5e9" />
+                  <Text style={[
+                    styles.summaryTitle, 
+                    isTablet && styles.summaryTitleTablet,
+                    isLargeTablet && styles.summaryTitleLargeTablet
+                  ]}>
+                    Today's Progress
+                  </Text>
+                  <View style={[
+                    styles.summaryBadge, 
+                    isTablet && styles.summaryBadgeTablet,
+                    isLargeTablet && styles.summaryBadgeLargeTablet
+                  ]}>
+                    <Text style={[
+                      styles.summaryBadgeText, 
+                      isTablet && styles.summaryBadgeTextTablet,
+                      isLargeTablet && styles.summaryBadgeTextLargeTablet
+                    ]}>
+                      {Math.round(progress * 100)}%
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.summaryItems}>
+                  {selectedMood && (
+                    <View style={styles.summaryItem}>
+                      <Text style={[
+                        styles.summaryItemIcon, 
+                        isTablet && styles.summaryItemIconTablet,
+                        isLargeTablet && styles.summaryItemIconLargeTablet
+                      ]}>
+                        🎯
+                      </Text>
+                      <Text style={[
+                        styles.summaryItemText, 
+                        isTablet && styles.summaryItemTextTablet,
+                        isLargeTablet && styles.summaryItemTextLargeTablet
+                      ]}>
+                        Mood: {selectedMoodData?.emoji} {selectedMoodData?.label}
+                      </Text>
+                    </View>
+                  )}
+                  {completedHabits > 0 && (
+                    <View style={styles.summaryItem}>
+                      <Text style={[
+                        styles.summaryItemIcon, 
+                        isTablet && styles.summaryItemIconTablet,
+                        isLargeTablet && styles.summaryItemIconLargeTablet
+                      ]}>
+                        ✅
+                      </Text>
+                      <Text style={[
+                        styles.summaryItemText, 
+                        isTablet && styles.summaryItemTextTablet,
+                        isLargeTablet && styles.summaryItemTextLargeTablet
+                      ]}>
+                        Completed {completedHabits} habit{completedHabits > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  )}
+                  {decision && (
+                    <View style={styles.summaryItem}>
+                      <Text style={[
+                        styles.summaryItemIcon, 
+                        isTablet && styles.summaryItemIconTablet,
+                        isLargeTablet && styles.summaryItemIconLargeTablet
+                      ]}>
+                        💭
+                      </Text>
+                      <Text style={[
+                        styles.summaryItemText, 
+                        isTablet && styles.summaryItemTextTablet,
+                        isLargeTablet && styles.summaryItemTextLargeTablet
+                      ]}>
+                        Reflection documented ({decision.length} characters)
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
+          {/* Motivational Quote */}
+          <Animated.View entering={FadeInDown.delay(700)} style={[
+            styles.quoteSection, 
+            isTablet && styles.quoteSectionTablet,
+            isLargeTablet && styles.quoteSectionLargeTablet
+          ]}>
             <LinearGradient
-              colors={selectedMood && !isSaving ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
+              colors={['#fef7ff', '#faf5ff']}
               style={[
-                styles.saveButtonGradient, 
-                isTablet && styles.saveButtonGradientTablet,
-                isLargeTablet && styles.saveButtonGradientLargeTablet
+                styles.quoteGradient, 
+                isTablet && styles.quoteGradientTablet,
+                isLargeTablet && styles.quoteGradientLargeTablet
               ]}
             >
-              <Check size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#ffffff" />
               <Text style={[
-                styles.saveButtonText, 
-                isTablet && styles.saveButtonTextTablet,
-                isLargeTablet && styles.saveButtonTextLargeTablet
+                styles.quote, 
+                isTablet && styles.quoteTablet,
+                isLargeTablet && styles.quoteLargeTablet
               ]}>
-                {isSaving ? 'Saving...' : isEditing ? 'Update Entry' : 'Save Entry'}
+                "The journey of a thousand miles begins with one step."
+              </Text>
+              <Text style={[
+                styles.quoteAuthor, 
+                isTablet && styles.quoteAuthorTablet,
+                isLargeTablet && styles.quoteAuthorLargeTablet
+              ]}>
+                - Lao Tzu
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
+          </Animated.View>
+
+          {/* Save Button */}
+          <Animated.View entering={FadeInDown.delay(800)} style={styles.saveSection} pointerEvents="box-none">
+            <TouchableOpacity 
+              style={[
+                styles.saveButtonLarge,
+                isTablet && styles.saveButtonLargeTablet,
+                isLargeTablet && styles.saveButtonLargeLargeTablet,
+                selectedMood ? styles.saveButtonActive : null,
+                isSaving && styles.saveButtonDisabled
+              ]} 
+              onPress={handleSave}
+              disabled={isSaving}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              delayPressIn={0}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={selectedMood && !isSaving ? ['#667eea', '#764ba2'] : ['#9ca3af', '#6b7280']}
+                style={[
+                  styles.saveButtonGradient, 
+                  isTablet && styles.saveButtonGradientTablet,
+                  isLargeTablet && styles.saveButtonGradientLargeTablet
+                ]}
+                pointerEvents="box-none"
+              >
+                <Check size={isLargeTablet ? 28 : isTablet ? 24 : 20} color="#ffffff" />
+                <Text style={[
+                  styles.saveButtonText, 
+                  isTablet && styles.saveButtonTextTablet,
+                  isLargeTablet && styles.saveButtonTextLargeTablet
+                ]}>
+                  {isSaving ? 'Saving...' : isEditing ? 'Update Entry' : 'Save Entry'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

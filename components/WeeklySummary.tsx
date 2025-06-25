@@ -50,16 +50,27 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
 
   const fetchSummary = useCallback(async () => {
     try {
+      console.log('fetchSummary called with:', { 
+        authLoading, 
+        userId: user?.id,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
       setLoading(true);
       setError(null);
       
       if (authLoading) {
+        console.log('Auth still loading, returning early');
         return; // Wait for auth to complete
       }
 
       if (!user?.id) {
+        console.log('No user ID found, throwing error');
         throw new Error('Please sign in to view your weekly summary');
       }
+
+      console.log('Proceeding with user ID:', user.id);
 
       // Calculate the date range for the current week
       const now = new Date();
@@ -81,6 +92,8 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
         currentWeekStart,
         currentWeekEnd
       );
+
+      console.log('AI Service result:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to generate weekly summary');

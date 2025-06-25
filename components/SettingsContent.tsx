@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Image, Linking } from 'react-native';
 import { useState } from 'react';
 import { User, Crown, Globe, Bell, Shield, LogOut, ChevronRight, Sparkles, Settings as SettingsIcon, CircleHelp as HelpCircle, Mail, FileText, ArrowRight, CreditCard as Edit } from 'lucide-react-native';
 import { useUser } from '@/components/UserContext';
@@ -112,6 +112,16 @@ export default function SettingsContent() {
               <View style={styles.headerIcon}>
                 <SettingsIcon size={24} color="#ffffff" />
               </View>
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 20, right: 80, zIndex: 10 }}
+                onPress={() => Linking.openURL('https://bolt.new/')}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={require('../assets/images/black_circle_360x360.png')}
+                  style={{ width: 56, height: 56 }}
+                />
+              </TouchableOpacity>
             </View>
           </LinearGradient>
         </Animated.View>

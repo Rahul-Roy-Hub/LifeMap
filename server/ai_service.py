@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentType
-from pica_langchain import PicaClient, create_pica_agent
 import os
 from dotenv import load_dotenv
 import logging
 import traceback
 import json
 import requests
+from dappier import Dappier
+from supabase import create_client, Client
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(
@@ -23,13 +23,10 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Initialize Pica client
-pica_client = PicaClient(
-    secret=os.getenv("PICA_API_KEY")
-)
+# Initialize Dappier
+dappier = Dappier()
 
-# System prompt for the LifeMap AI Coach
-SYSTEM_PROMPT = """
+LIFEMAP_SYSTEM_PROMPT = """
 You are LifeMap AI Coach – a supportive, friendly, and reflective personal growth assistant.
 
 ## Purpose
@@ -47,7 +44,8 @@ You are LifeMap AI Coach – a supportive, friendly, and reflective personal gro
 ## Responsibilities
 - Accept inputs like: "I felt anxious today before work."
 - Store key points (mood, notes, date).
-- On prompt like "/summary" or "how was my week?", return:
+- On prompt like "/summary" or "how was my week?"
+    return:
     - Mood trend
     - Productivity average
     - Best/worst days
@@ -76,125 +74,338 @@ Avoid advice that sounds clinical. Stick to motivation and reflection.
 - If a user is in distress, suggest talking to a professional.
 """
 
-def get_deepseek_response(prompt: str) -> dict:
-    """Get response from OpenRouter API"""
+def fetch_dappier_data(query: str) -> dict:
+    """
+    Fetch data from Dappier API
+    
+    Args:
+        query (str): The query to send to Dappier
+        
+    Returns:
+        dict: The response from Dappier API
+    """
     try:
+        api_key = os.getenv("DAPPIER_API_KEY")
+        if not api_key:
+            raise ValueError("DAPPIER_API_KEY not found in environment variables")
+            
+        endpoint = "https://api.dappier.com/app/datamodel/dm_01jydzexekfhbvnmr18pjjvf7b"
         headers = {
-            "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
-            "HTTP-Referer": "https://lifemap.app",  # Your app's domain
-            "X-Title": "LifeMap",  # Your app's name
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
+        body = {"query": query}
         
-        # Create a more concise system prompt
-        concise_system_prompt = """You are LifeMap AI Coach. Analyze user entries and provide a weekly summary in this JSON format:
-{
-  "summary": "Brief overview",
-  "insights": ["key point 1", "key point 2"],
-  "moodAnalysis": {
-    "averageMood": number,
-    "moodTrend": "improving/declining/stable",
-    "suggestions": ["suggestion 1"],
-    "moodDistribution": {"mood_score": count}
-  },
-  "habitAnalysis": {
-    "topHabits": ["habit 1"],
-    "habitSuggestions": ["suggestion 1"]
-  },
-  "goalsProgress": {
-    "completed": number,
-    "inProgress": number,
-    "suggestions": ["suggestion 1"]
-  },
-  "nextWeekRecommendations": {
-    "focusAreas": ["area 1"],
-    "actionItems": ["item 1"],
-    "habitGoals": ["goal 1"]
-  }
-}"""
-        
-        data = {
-            "model": "anthropic/claude-3-opus",  # Using Claude model
-            "messages": [
-                {"role": "system", "content": concise_system_prompt},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 100  # Reduced to stay within free tier limits
-        }
-        
-        logger.info(f"Sending request to OpenRouter API with model: {data['model']}")
-        logger.info(f"Request data: {json.dumps(data, indent=2)}")
-        
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=data
-        )
-        
-        logger.info(f"Response status: {response.status_code}")
-        logger.info(f"Response headers: {dict(response.headers)}")
+        logger.info(f"Sending request to Dappier API with body: {body}")
+        response = requests.post(endpoint, headers=headers, json=body)
+        logger.info(f"Dappier API response status: {response.status_code}")
+        logger.info(f"Dappier API response body: {response.text}")
         
         if response.status_code != 200:
-            error_text = response.text
-            logger.error(f"OpenRouter API error: {error_text}")
-            try:
-                error_json = json.loads(error_text)
-                error_message = error_json.get('error', {}).get('message', error_text)
-            except:
-                error_message = error_text
-            raise Exception(f"OpenRouter API error: {error_message}")
+            logger.error(f"Dappier API error: {response.text}")
+            raise Exception(f"Dappier API returned status code {response.status_code}")
             
-        result = response.json()
-        logger.info(f"OpenRouter API response: {json.dumps(result, indent=2)}")
-        
-        if 'choices' not in result or not result['choices']:
-            raise Exception("No choices in API response")
-            
-        return result['choices'][0]['message']['content']
+        return response.json()
         
     except Exception as e:
-        logger.error(f"Error calling OpenRouter API: {str(e)}")
+        logger.error(f"Error calling Dappier API: {str(e)}")
         raise
 
-@app.route('/api/process-input', methods=['POST', 'OPTIONS'])
-def process_input():
-    logger.info("Received request to /api/process-input")
-    logger.info(f"Request method: {request.method}")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    logger.info("DEBUG: /api/chat endpoint handler was called")
+    logger.info(f"DEBUG: Current working directory: {os.getcwd()}")
+    logger.info("Received request to /api/chat")
     try:
         data = request.json
-        logger.info(f"Request data: {data}")
-        
-        user_input = data.get('input')
-        
-        if not user_input:
-            logger.error("No input provided in request")
-            return jsonify({'error': 'No input provided'}), 400
+        user_message = data.get('message')
+        user_id = data.get('user_id')
 
-        # Get response from DeepSeek
-        logger.info(f"Processing input: {user_input}")
-        result = get_deepseek_response(user_input)
-        logger.info(f"DeepSeek result: {result}")
+        if not user_message:
+            return jsonify({'error': 'No message provided'}), 400
 
-        # Try to parse the result as JSON
-        try:
-            content = json.loads(result)
-        except json.JSONDecodeError:
-            # If not valid JSON, use the raw result
-            content = result
+        # Check if this is a weekly summary request (contains JSON data) or a regular chat
+        summary_triggers = [
+            "weekly summary", "how was my week", "give me my summary", "summary for this week", "week summary"
+        ]
+        is_summary_request = any(trigger in user_message.lower() for trigger in summary_triggers)
 
-        return jsonify({
-            'success': True,
-            'result': content
-        })
+        if '[' in user_message and ']' in user_message:
+            # Handle weekly summary (JSON data sent from frontend)
+            try:
+                # Extract the JSON part from the message
+                json_start = user_message.find('[')
+                json_end = user_message.find(']') + 1
+                entries_json = user_message[json_start:json_end]
+                entries = json.loads(entries_json)
+                
+                # Calculate statistics
+                total_mood = sum(entry.get('mood', 0) for entry in entries)
+                avg_mood = total_mood / len(entries) if entries else 0
+                
+                # Count completed habits
+                habit_counts = {}
+                for entry in entries:
+                    habits = entry.get('habits', {})
+                    for habit, completed in habits.items():
+                        if completed:
+                            habit_counts[habit] = habit_counts.get(habit, 0) + 1
+                
+                # Get top habits
+                top_habits = sorted(habit_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+                
+                # Generate response
+                response = {
+                    "success": True,
+                    "result": {
+                        "summary": f"Great week! Your mood has been consistently positive (average: {avg_mood:.1f}/5). 🌟",
+                        "insights": [
+                            f"You've maintained a positive outlook throughout the week! 😊",
+                            f"Your most consistent habit was {top_habits[0][0] if top_habits else 'Reading'} ({top_habits[0][1] if top_habits else 0} times) 📈",
+                            "You're building great momentum with your daily practices! 💪"
+                        ],
+                        "moodAnalysis": {
+                            "averageMood": avg_mood,
+                            "moodTrend": "positive" if avg_mood >= 4 else "neutral",
+                            "suggestions": [
+                                "Keep up the positive energy!",
+                                "Consider adding meditation to your routine",
+                                "Share your success with friends and family"
+                            ],
+                            "moodDistribution": {str(int(avg_mood)): len(entries)}
+                        },
+                        "habitAnalysis": {
+                            "topHabits": [habit for habit, count in top_habits],
+                            "habitSuggestions": [
+                                "Try to maintain consistency with your top habits",
+                                "Consider adding exercise to your routine",
+                                "Start small with new habits"
+                            ]
+                        },
+                        "goalsProgress": {
+                            "completed": len([h for h, c in habit_counts.items() if c >= 3]),
+                            "inProgress": len([h for h, c in habit_counts.items() if 0 < c < 3]),
+                            "suggestions": [
+                                "Set specific goals for next week",
+                                "Break down larger goals into smaller tasks",
+                                "Celebrate your progress!"
+                            ]
+                        },
+                        "nextWeekRecommendations": {
+                            "focusAreas": [
+                                "Maintain your positive momentum",
+                                "Build on your successful habits",
+                                "Try one new healthy practice"
+                            ],
+                            "actionItems": [
+                                "Set specific times for your habits",
+                                "Track your progress daily",
+                                "Reflect on what works best for you"
+                            ],
+                            "habitGoals": [
+                                "Keep up with reading",
+                                "Try adding a morning exercise routine",
+                                "Practice mindfulness daily"
+                            ]
+                        }
+                    }
+                }
+                
+                return jsonify(response)
+                
+            except json.JSONDecodeError:
+                logger.error("Failed to parse journal entries JSON")
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to parse journal entries'
+                }), 400
+        elif is_summary_request:
+            # Handle summary request from chat tab: fetch entries and return summary
+            try:
+                # Validate user_id
+                if not user_id:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No user ID provided'
+                    }), 400
+
+                SUPABASE_URL = os.getenv("SUPABASE_URL")
+                SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+                supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+                # Log all entries for this user (regardless of date) for debugging
+                logger.info(f"Queried user_id: {user_id}")
+                all_ids_resp = supabase.table("journal_entries").select("user_id").execute()
+                all_ids = all_ids_resp.data if hasattr(all_ids_resp, 'data') else all_ids_resp.get("data", [])
+                logger.info(f"ALL user_ids in journal_entries: {all_ids}")
+                
+                # Calculate start and end of the current week (Monday to Sunday)
+                today = datetime.utcnow()
+                start_of_week = today - timedelta(days=today.weekday())
+                start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_of_week = start_of_week + timedelta(days=7)
+
+                # Query only entries from this week
+                entries_resp = supabase.table("journal_entries")\
+                    .select("*")\
+                    .eq("user_id", user_id)\
+                    .gte("created_at", start_of_week.isoformat())\
+                    .lt("created_at", end_of_week.isoformat())\
+                    .execute()
+                entries = entries_resp.data if hasattr(entries_resp, 'data') else entries_resp.get("data", [])
+                logger.info(f"Entries fetched for user {user_id} this week: {entries}")
+                
+                # If no entries for this week, fetch the last 7 entries for the user
+                if not entries:
+                    recent_entries_resp = supabase.table("journal_entries")\
+                        .select("*")\
+                        .eq("user_id", user_id)\
+                        .order("created_at", desc=True)\
+                        .limit(7)\
+                        .execute()
+                    entries = recent_entries_resp.data if hasattr(recent_entries_resp, 'data') else recent_entries_resp.get("data", [])
+                    logger.info(f"Last 7 entries for user {user_id}: {entries}")
+                
+                if not entries:
+                    logger.info(f"NO entries found for user {user_id} after both queries. entries: {entries}")
+                    return jsonify({
+                        'success': True,
+                        'result': "It seems I don't have any entries logged for this week yet! 📝 If you share how your days have been going—your mood, productivity, and any highlights—I can help create a summary for you. What was your mood like today? 😊"
+                    })
+                # ---
+                total_mood = sum(entry.get('mood', 0) for entry in entries)
+                avg_mood = total_mood / len(entries) if entries else 0
+                habit_counts = {}
+                for entry in entries:
+                    habits = entry.get('habits', {})
+                    for habit, completed in habits.items():
+                        if completed:
+                            habit_counts[habit] = habit_counts.get(habit, 0) + 1
+                top_habits = sorted(habit_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+                response = {
+                    "success": True,
+                    "result": {
+                        "summary": f"Great week! Your mood has been consistently positive (average: {avg_mood:.1f}/5). 🌟",
+                        "insights": [
+                            f"You've maintained a positive outlook throughout the week! 😊",
+                            f"Your most consistent habit was {top_habits[0][0] if top_habits else 'Reading'} ({top_habits[0][1] if top_habits else 0} times) 📈",
+                            "You're building great momentum with your daily practices! 💪"
+                        ],
+                        "moodAnalysis": {
+                            "averageMood": avg_mood,
+                            "moodTrend": "positive" if avg_mood >= 4 else "neutral",
+                            "suggestions": [
+                                "Keep up the positive energy!",
+                                "Consider adding meditation to your routine",
+                                "Share your success with friends and family"
+                            ],
+                            "moodDistribution": {str(int(avg_mood)): len(entries)}
+                        },
+                        "habitAnalysis": {
+                            "topHabits": [habit for habit, count in top_habits],
+                            "habitSuggestions": [
+                                "Try to maintain consistency with your top habits",
+                                "Consider adding exercise to your routine",
+                                "Start small with new habits"
+                            ]
+                        },
+                        "goalsProgress": {
+                            "completed": len([h for h, c in habit_counts.items() if c >= 3]),
+                            "inProgress": len([h for h, c in habit_counts.items() if 0 < c < 3]),
+                            "suggestions": [
+                                "Set specific goals for next week",
+                                "Break down larger goals into smaller tasks",
+                                "Celebrate your progress!"
+                            ]
+                        },
+                        "nextWeekRecommendations": {
+                            "focusAreas": [
+                                "Maintain your positive momentum",
+                                "Build on your successful habits",
+                                "Try one new healthy practice"
+                            ],
+                            "actionItems": [
+                                "Set specific times for your habits",
+                                "Track your progress daily",
+                                "Reflect on what works best for you"
+                            ],
+                            "habitGoals": [
+                                "Keep up with reading",
+                                "Try adding a morning exercise routine",
+                                "Practice mindfulness daily"
+                            ]
+                        }
+                    }
+                }
+                return jsonify(response)
+            except Exception as e:
+                logger.error(f"Failed to fetch or process journal entries: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to fetch or process journal entries'
+                }), 500
+        else:
+            # Handle regular chat message using Dappier
+            try:
+                response = dappier.search_real_time_data_string(
+                    query=user_message,
+                    ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
+                )
+                return jsonify({
+                    'success': True,
+                    'result': response
+                })
+            except Exception as e:
+                logger.error(f"Dappier chat error: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to process chat message'
+                }), 500
+
+        # Fallback for any unhandled case
+        return jsonify({'success': False, 'error': 'No valid response generated'}), 500
 
     except Exception as e:
-        logger.error(f"Error processing request: {str(e)}")
+        logger.error(f"Error in chat endpoint: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/weekly-summary', methods=['GET'])
+def weekly_summary():
+    """
+    Endpoint to fetch weekly summary using Dappier's analysis capabilities
+    """
+    logger.info("Received request to /api/weekly-summary")
+    
+    try:
+        user_id = request.args.get('user_id')
+        
+        # Construct a detailed query for weekly summary
+        query = {
+            "type": "weekly_summary",
+            "user_id": user_id,
+            "request": {
+                "mood_analysis": True,
+                "productivity_metrics": True,
+                "habit_tracking": True,
+                "goals_progress": True,
+                "recommendations": True
+            }
+        }
+        
+        # Get comprehensive analysis from Dappier
+        response = fetch_dappier_data(json.dumps(query))
+        
+        return jsonify({
+            'success': True,
+            'result': response
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in weekly summary endpoint: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
@@ -205,6 +416,20 @@ def process_input():
 def health_check():
     logger.info("Health check endpoint called")
     return jsonify({'status': 'ok'}), 200
+
+@app.route('/api/weather')
+def weather():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    if not lat or not lon:
+        return jsonify({'error': 'Missing lat or lon'}), 400
+
+    url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={os.environ.get("OPENWEATHERMAP_API_KEY", "your_real_api_key_here")}&units=metric'
+    try:
+        resp = requests.get(url)
+        return jsonify(resp.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     logger.info("Starting server on port 5000")

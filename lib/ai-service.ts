@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
+import type { ChatMessage } from './chatService';
 
 // Use your computer's local IP address instead of localhost
-const API_URL = 'http://192.168.0.115:5000/api/process-input'; // Replace with your actual IP address
+const API_URL = 'http://192.168.0.115:5000/api/chat';
 
 export interface AIResponse {
   success: boolean;
@@ -53,13 +54,23 @@ export class AIService {
   async processInput(input: string): Promise<AIResponse> {
     try {
       console.log('Sending request to:', API_URL);
+      
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      console.log('Current user ID:', userId);
+      
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ 
+          message: input,
+          user_id: userId
+        }),
       });
 
       console.log('Response status:', response.status);
@@ -86,23 +97,49 @@ export class AIService {
 
   async generateWeeklySummary(userId: string, startDate: Date, endDate: Date): Promise<AIResponse> {
     try {
-      console.log('Generating weekly summary for:', { userId, startDate, endDate });
-      
+      console.log('Generating weekly summary with params:', { 
+        userId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
       // First, get the user's entries from Supabase
       const { data: entries, error: entriesError } = await supabase
-        .from('entries')
+        .from('journal_entries')
         .select('*')
         .eq('user_id', userId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: true });
 
+      console.log('Supabase fetch result:', { 
+        entries: entries?.length || 0,
+        entriesError,
+        sampleEntry: entries?.[0] 
+      });
+
+      // Debug: Let's also check if there are ANY entries for this user
+      const { data: allEntries, error: allEntriesError } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      console.log('All entries for user:', {
+        count: allEntries?.length || 0,
+        error: allEntriesError,
+        sampleEntries: allEntries?.slice(0, 2).map(e => ({
+          id: e.id,
+          created_at: e.created_at,
+          content: e.content?.substring(0, 50) + '...'
+        }))
+      });
+
       if (entriesError) {
         console.error('Supabase error:', entriesError);
         throw entriesError;
       }
-
-      console.log('Fetched entries:', entries);
 
       // If no entries found, return a friendly message
       if (!entries || entries.length === 0) {
@@ -144,75 +181,67 @@ export class AIService {
         productivity: entry.productivity
       }));
 
-      // Create a detailed prompt for the AI
-      const prompt = `Analyze the following weekly entries and provide a comprehensive summary:
+      // Create a prompt for the AI Coach
+      const prompt = `Here are this user's journal entries for the week (as JSON):\n${JSON.stringify(formattedEntries, null, 2)}\n\nPlease provide a LifeMap Weekly Summary with:\n- Mood trend\n- Productivity average\n- Best/worst days\n- Positive suggestions\n- Friendly, motivational tone with emojis.\nIf there is not enough data, say so in a supportive way.`;
 
-Entries:
-${JSON.stringify(formattedEntries, null, 2)}
+      // Send to backend AI Coach endpoint
+      const API_URL = 'http://192.168.0.115:5000/api/chat';  // Updated to use the actual server IP
+      console.log('Sending weekly summary request to:', API_URL, { message: prompt, user_id: userId });
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ message: prompt, user_id: userId }),
+      });
 
-Please provide:
-1. Overall Summary: A brief overview of the week
-2. Key Insights: 3-5 main takeaways from the entries
-3. Mood Analysis:
-   - Average mood score
-   - Mood trend (improving/declining/stable)
-   - Mood distribution
-   - Suggestions for mood improvement
-4. Habit Analysis:
-   - Top performing habits
-   - Suggestions for habit improvement
-5. Goals Progress:
-   - Number of completed goals
-   - Number of in-progress goals
-   - Suggestions for goal achievement
-6. Next Week Recommendations:
-   - Focus areas
-   - Specific action items
-   - Habit goals
-
-Format the response as a JSON object with these exact keys:
-{
-  "summary": "string",
-  "insights": ["string"],
-  "moodAnalysis": {
-    "averageMood": number,
-    "moodTrend": "string",
-    "suggestions": ["string"],
-    "moodDistribution": {"mood_score": count}
-  },
-  "habitAnalysis": {
-    "topHabits": ["string"],
-    "habitSuggestions": ["string"]
-  },
-  "goalsProgress": {
-    "completed": number,
-    "inProgress": number,
-    "suggestions": ["string"]
-  },
-  "nextWeekRecommendations": {
-    "focusAreas": ["string"],
-    "actionItems": ["string"],
-    "habitGoals": ["string"]
-  }
-}`;
-
-      console.log('Sending prompt to AI:', prompt);
-
-      // Get AI response
-      const response = await this.processInput(prompt);
-      console.log('AI response:', response);
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to generate summary');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      return response;
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('Error generating weekly summary:', error);
       return {
         success: false,
         result: null,
         error: error instanceof Error ? error.message : 'Failed to generate weekly summary',
+      };
+    }
+  }
+
+  async sendMessage(userMessage: string): Promise<ChatMessage> {
+    try {
+      const aiResponse = await this.processInput(userMessage);
+      let text: string;
+      if (typeof aiResponse.result === 'string') {
+        text = aiResponse.result;
+      } else if (aiResponse.result && typeof aiResponse.result === 'object') {
+        // Format the summary object into a chat-friendly string
+        text = aiResponse.result.summary || "Here's your summary!";
+        if (aiResponse.result.insights) {
+          text += '\n\n' + aiResponse.result.insights.join('\n');
+        }
+        // Optionally add more fields (moodAnalysis, goalsProgress, etc.)
+      } else {
+        text = "Sorry, I couldn't generate a response. Please try again.";
+      }
+      return {
+        type: 'text',
+        text,
+        sender: 'bot',
+        timestamp: new Date()
+      };
+    } catch (error) {
+      console.error('Error sending message to PICA AI:', error);
+      return {
+        type: 'text',
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'bot',
+        timestamp: new Date(),
       };
     }
   }
