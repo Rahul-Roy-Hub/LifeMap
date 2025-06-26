@@ -1,5 +1,5 @@
 flask==2.3.3
-gunicorn
+gunicorn==23.0.0
 flask-cors==4.0.0
 langchain==0.3.20
 langchain-openai==0.3.8
@@ -7,3 +7,4 @@ pica-langchain==1.4.0
 python-dotenv==1.0.0
 mcp-python==0.1.0 
 requests==2.32.3
+dappier==0.3.6
