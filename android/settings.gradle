@@ -1,58 +1,38 @@
-  pluginManagement {
-    def reactNativeGradlePlugin = new File(
-      providers.exec {
-        workingDir(rootDir)
-        commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
-      }.standardOutput.asText.get().trim()
-    ).getParentFile().absolutePath
-    includeBuild(reactNativeGradlePlugin)
-    
-    def expoPluginsPath = new File(
-      providers.exec {
-        workingDir(rootDir)
-        commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })")
-      }.standardOutput.asText.get().trim(),
-      "../android/expo-gradle-plugin"
-    ).absolutePath
-    includeBuild(expoPluginsPath)
+pluginManagement {
+  def reactNativeGradlePlugin = file(
+    providers.exec {
+      workingDir(rootDir)
+      commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+    }.standardOutput.asText.get().trim()
+  ).parentFile.absolutePath
+  includeBuild(reactNativeGradlePlugin)
+
+  def expoPluginsPath = file(
+    providers.exec {
+      workingDir(rootDir)
+      commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })")
+    }.standardOutput.asText.get().trim()
+  ).toPath().resolve("../android/expo-gradle-plugin").normalize().toFile().absolutePath
+  includeBuild(expoPluginsPath)
+}
+
+plugins {
+  id("com.facebook.react.settings")
+  id("expo-autolinking-settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
+    ex.autolinkLibrariesFromCommand()
+  } else {
+    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
   }
+}
+expoAutolinking.useExpoModules()
 
-  plugins {
-    id("com.facebook.react.settings")
-    id("expo-autolinking-settings")
-  }
+rootProject.name = 'LifeMap'
 
-  extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-    if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-      ex.autolinkLibrariesFromCommand()
-    } else {
-      ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
-    }
-  }
-  expoAutolinking.useExpoModules()
+expoAutolinking.useExpoVersionCatalog()
 
-  rootProject.name = 'LifeMap'
-
-  expoAutolinking.useExpoVersionCatalog()
-
-  include ':app'
-  includeBuild(expoAutolinking.reactNativeGradlePlugin)
-
-  include(":react-native-reanimated")
-  project(":react-native-reanimated").projectDir = File(rootDir, "node_modules/react-native-reanimated/android")
-
-  include(":react-native-webview")
-  project(":react-native-webview").projectDir = File(rootDir, "node_modules/react-native-webview/android")
-
-  include(":react-native-safe-area-context")
-  project(":react-native-safe-area-context").projectDir = File(rootDir, "node_modules/react-native-safe-area-context/android")
-
-  include(":react-native-screens")
-  project(":react-native-screens").projectDir = File(rootDir, "node_modules/react-native-screens/android")
-
-  include(":react-native-svg")
-  project(":react-native-svg").projectDir = File(rootDir, "node_modules/react-native-svg/android")
-
-  include(":react-native-purchases")
-  project(":react-native-purchases").projectDir = File(rootDir, "node_modules/react-native-purchases/android")
-
+include ':app'
+includeBuild(expoAutolinking.reactNativeGradlePlugin)
