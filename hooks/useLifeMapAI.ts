@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-const API_URL = 'http://localhost:5000/api/process-input';
+// Use your Render backend URL
+const API_URL = 'https://lifemap-ta89.onrender.com/api/process-input';
 
 export const useLifeMapAI = () => {
   const [isLoading, setIsLoading] = useState(false);

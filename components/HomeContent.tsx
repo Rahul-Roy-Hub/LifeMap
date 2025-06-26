@@ -107,7 +107,7 @@ export default function HomeContent() {
         const lat = location.coords.latitude;
         const lon = location.coords.longitude;
         // Call your backend proxy instead of OpenWeatherMap directly
-        const url = `http://192.168.0.115:5000/api/weather?lat=${lat}&lon=${lon}`;
+        const url = `https://lifemap-ta89.onrender.com/api/weather?lat=${lat}&lon=${lon}`;
         const response = await fetch(url);
         const data = await response.json();
         console.log('Weather API response:', data);

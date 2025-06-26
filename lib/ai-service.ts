@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
 import type { ChatMessage } from './chatService';
 
-// Use your computer's local IP address instead of localhost
-const API_URL = 'http://192.168.0.115:5000/api/chat';
+// Use your Render backend URL
+const API_URL = 'https://lifemap-ta89.onrender.com/api/chat';
 
 export interface AIResponse {
   success: boolean;
@@ -185,7 +185,7 @@ export class AIService {
       const prompt = `Here are this user's journal entries for the week (as JSON):\n${JSON.stringify(formattedEntries, null, 2)}\n\nPlease provide a LifeMap Weekly Summary with:\n- Mood trend\n- Productivity average\n- Best/worst days\n- Positive suggestions\n- Friendly, motivational tone with emojis.\nIf there is not enough data, say so in a supportive way.`;
 
       // Send to backend AI Coach endpoint
-      const API_URL = 'http://192.168.0.115:5000/api/chat';  // Updated to use the actual server IP
+      const API_URL = 'https://lifemap-ta89.onrender.com/api/chat';
       console.log('Sending weekly summary request to:', API_URL, { message: prompt, user_id: userId });
       const response = await fetch(API_URL, {
         method: 'POST',
