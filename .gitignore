@@ -8,8 +8,6 @@ yarn-error.log*
 .expo/
 dist/
 web-build/
-/android
-/ios
 
 # Native
 *.orig.*
