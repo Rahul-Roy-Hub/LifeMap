@@ -36,7 +36,8 @@ export default {
       },
       "openWeatherMapApiKey": process.env.OPENWEATHERMAP_API_KEY,
       "supabaseUrl": process.env.EXPO_PUBLIC_SUPABASE_URL,
-      "supabaseAnonKey": process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+      "supabaseAnonKey": process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      "dappierApiKey": process.env.DAPPIER_API_KEY,
     }
   }
 }
