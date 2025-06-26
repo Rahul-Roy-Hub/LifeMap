@@ -137,7 +137,7 @@ export default function AuthScreen() {
                     borderWidth: 2,
                     borderColor: '#fb923c',
                   }}>
-                    <Image source={require('../assets/images/LifeMapLogo.png')} style={{ width: 56, height: 56, borderRadius: 28, resizeMode: 'contain' }} />
+                    <Image source={require('../assets/images/lifemaplogo.png')} style={{ width: 56, height: 56, borderRadius: 28, resizeMode: 'contain' }} />
                   </View>
                 </View>
                 <Text style={styles.appTitle}>LifeMap</Text>

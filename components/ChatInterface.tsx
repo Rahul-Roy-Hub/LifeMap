@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const BotIcon = () => (
   <View style={styles.botIconContainer}>
     <Image
-      source={require('../assets/images/LifeMapLogo.png')}
+      source={require('../assets/images/lifemaplogo.png')}
       style={styles.botLogo}
       resizeMode="contain"
     />

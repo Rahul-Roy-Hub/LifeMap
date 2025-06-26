@@ -2,17 +2,17 @@ import 'dotenv/config';
 
 export default {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "LifeMap",
+    "slug": "lifemap",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/lifemaplogo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "your.bundle.identifier",
+      "bundleIdentifier": "app.lifemap.journal",
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -20,7 +20,7 @@ export default {
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/lifemaplogo.png"
     },
     "plugins": ["expo-router", "expo-font", "expo-web-browser"],
     "experiments": {
@@ -31,6 +31,9 @@ export default {
 
     },
     "extra": {
+      eas: {
+        projectId: "779700c2-839a-4588-a41b-81894466c0fa"
+      },
       "openWeatherMapApiKey": process.env.OPENWEATHERMAP_API_KEY,
       "supabaseUrl": process.env.EXPO_PUBLIC_SUPABASE_URL,
       "supabaseAnonKey": process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
