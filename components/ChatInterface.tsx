@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -40,8 +39,7 @@ export const ChatInterface: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const chatService = ChatService.getInstance();
   const insets = useSafeAreaInsets();
-  const TAB_BAR_HEIGHT = 140; // Match your tab bar height in _layout.tsx
-  const keyboardVerticalOffset = TAB_BAR_HEIGHT + insets.bottom;
+  const keyboardVerticalOffset = 140 + insets.bottom; // Offset matches tab bar height
 
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -128,7 +126,7 @@ export const ChatInterface: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <ScrollView
