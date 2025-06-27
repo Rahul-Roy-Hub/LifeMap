@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get environment variables for different platforms
 const getSupabaseUrl = (): string => {
@@ -44,6 +45,7 @@ export const supabase = createClient<Database>(finalSupabaseUrl, finalSupabaseAn
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    storage: AsyncStorage,
   },
 });
 

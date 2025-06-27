@@ -37,6 +37,7 @@ function TabLayoutInner({ colorScheme, insets }: { colorScheme: 'light' | 'dark'
           paddingTop: 8,
           height: 80 + insets.bottom,
         },
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen

@@ -117,13 +117,30 @@ export default function AuthScreen() {
               <View style={styles.header}>
                 {/* Black Circle in Top Right as Hyperlink */}
                 <TouchableOpacity
-                  style={{ position: 'absolute', top: 0, right: 0, zIndex: 10 }}
-                  onPress={() => Linking.openURL('https://bolt.new/')}
+                  style={{
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
+                    zIndex: 10,
+                    width: 56,
+                    height: 56,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={async () => {
+                    const url = 'https://bolt.new/';
+                    const supported = await Linking.canOpenURL(url);
+                    if (supported) {
+                      Linking.openURL(url);
+                    } else {
+                      alert("Can't open this link: " + url);
+                    }
+                  }}
                   activeOpacity={0.7}
                 >
                   <Image
                     source={require('../assets/images/black_circle_360x360.png')}
-                    style={styles.blackCircle}
+                    style={{ width: 56, height: 56 }}
                   />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
