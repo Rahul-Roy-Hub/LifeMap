@@ -224,7 +224,7 @@ export const WeeklySummary: React.FC<WeeklySummaryProps> = ({ startDate, endDate
             <Activity size={20} color="#22c55e" />
             <Text style={styles.title}>Mood Analysis</Text>
           </View>
-          <Text style={styles.subtitle}>Average Mood: {summary.moodAnalysis.averageMood}/10</Text>
+          <Text style={styles.subtitle}>Average Mood: {summary.moodAnalysis.averageMood.toFixed(1)}/10</Text>
           <Text style={styles.subtitle}>Trend: {summary.moodAnalysis.moodTrend}</Text>
           
           <View style={styles.moodDistribution}>

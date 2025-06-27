@@ -250,7 +250,7 @@ export default function HomeContent() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Enhanced Header with Gradient and Profile */}
-        <Animated.View entering={FadeInUp.delay(100)} style={styles.headerContainer}>
+        <View style={styles.headerContainer}>
           <LinearGradient
             colors={['#667eea', '#764ba2']}
             start={{ x: 0, y: 0 }}
@@ -344,28 +344,23 @@ export default function HomeContent() {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </Animated.View>
+        </View>
 
-        {/* Today's Entry Card with Enhanced Design */}
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.entryCardContainer}>
-          {/* Show the most recent entry card if one exists */}
+        {/* Content sections with guaranteed spacing */}
+        <View style={styles.contentSections}>
+          {/* Today's entry section */}
           {todaysEntries.length > 0 && (
-            <View style={[styles.entryCard, { marginBottom: subscription.plan === 'pro' ? 24 : 0 }]}>
-              <LinearGradient
-                colors={['#ffffff', '#f8fafc']}
-                style={styles.entryCardGradient}
-              >
-                <View style={styles.entryCardHeader}>
-                  <View style={styles.entryCardTitleContainer}>
-                    <Calendar size={20} color="#667eea" />
-                    <Text style={styles.cardTitle}>Today's Reflection</Text>
-                  </View>
+            <View style={styles.entrySection}>
+              <View style={styles.todayCard}>
+                <View style={styles.todayCardHeader}>
+                  <Calendar size={20} color="#667eea" />
+                  <Text style={styles.cardTitle}>Today's Reflection</Text>
                   <TouchableOpacity style={styles.editButton} onPress={handleEditEntry}>
                     <Edit size={16} color="#667eea" />
                     <Text style={styles.editButtonText}>Edit</Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.entryPreview}>
+                <View style={styles.todayCardContent}>
                   <View style={styles.moodDisplayContainer}>
                     <Text style={styles.moodDisplay}>{todaysEntries[0].mood_emoji}</Text>
                     <View style={styles.moodRating}>
@@ -402,121 +397,126 @@ export default function HomeContent() {
                     </View>
                   </View>
                 </View>
-              </LinearGradient>
+              </View>
             </View>
           )}
 
-          {/* For Pro users, always show the "Add Another Entry" button */}
-          {subscription.plan === 'pro' && (
-            <Animated.View style={pulseStyle}>
-              <TouchableOpacity style={styles.addEntryCard} onPress={handleAddEntry}>
-                <LinearGradient
-                  colors={['#667eea', '#764ba2']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.addEntryGradient}
-                >
-                  <View style={styles.addEntryIcon}>
-                    <Plus size={32} color="#ffffff" />
-                  </View>
-                  <Text style={styles.addEntryText}>Add Another Entry</Text>
-                  <Text style={styles.addEntrySubtext}>
-                    You can add multiple reflections today
-                  </Text>
-                  <ArrowRight size={20} color="#ffffff" style={styles.addEntryArrow} />
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+          {/* Add Entry Card */}
+          <View style={styles.addEntrySection}>
+            {/* For Pro users, always show the "Add Another Entry" button */}
+            {subscription.plan === 'pro' && (
+              <Animated.View style={pulseStyle}>
+                <TouchableOpacity style={styles.addEntryCard} onPress={handleAddEntry}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.addEntryGradient}
+                  >
+                    <View style={styles.addEntryIcon}>
+                      <Plus size={32} color="#ffffff" />
+                    </View>
+                    <Text style={styles.addEntryText}>Add Another Entry</Text>
+                    <Text style={styles.addEntrySubtext}>
+                      You can add multiple reflections today
+                    </Text>
+                    <ArrowRight size={20} color="#ffffff" style={styles.addEntryArrow} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
 
-          {/* For Free users, show the add button ONLY if there are no entries */}
-          {subscription.plan === 'free' && todaysEntries.length === 0 && (
-            <Animated.View style={pulseStyle}>
-              <TouchableOpacity style={styles.addEntryCard} onPress={handleEditEntry}>
-                <LinearGradient
-                  colors={['#667eea', '#764ba2']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.addEntryGradient}
-                >
-                  <View style={styles.addEntryIcon}>
-                    <Plus size={32} color="#ffffff" />
-                  </View>
-                  <Text style={styles.addEntryText}>Start Today's Entry</Text>
-                  <Text style={styles.addEntrySubtext}>
-                    Create your daily reflection and track your growth
-                  </Text>
-                  <ArrowRight size={20} color="#ffffff" style={styles.addEntryArrow} />
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-        </Animated.View>
+            {/* For Free users, show the add button ONLY if there are no entries */}
+            {subscription.plan === 'free' && todaysEntries.length === 0 && (
+              <Animated.View style={pulseStyle}>
+                <TouchableOpacity style={styles.addEntryCard} onPress={handleEditEntry}>
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.addEntryGradient}
+                  >
+                    <View style={styles.addEntryIcon}>
+                      <Plus size={32} color="#ffffff" />
+                    </View>
+                    <Text style={styles.addEntryText}>Start Today's Entry</Text>
+                    <Text style={styles.addEntrySubtext}>
+                      Create your daily reflection and track your growth
+                    </Text>
+                    <ArrowRight size={20} color="#ffffff" style={styles.addEntryArrow} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+          </View>
 
-        <View style={{ height: 32 }} />
-        <Animated.View entering={SlideInRight.delay(300)} style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <LinearGradient
-              colors={gradientColors.red}
-              style={styles.statGradient}
-            >
-              <View style={styles.statIconContainer}>
-                <Heart size={24} color="#ef4444" />
+          {/* Stats section */}
+          <View style={styles.statsSection}>
+            <View style={styles.statsContainer}>
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={gradientColors.red}
+                  style={styles.statGradient}
+                >
+                  <View style={styles.statIconContainer}>
+                    <Heart size={24} color="#ef4444" />
+                  </View>
+                  <Text style={styles.statNumber}>{entries.length}</Text>
+                  <Text style={styles.statLabel}>Total Entries</Text>
+                  <View style={styles.statProgress}>
+                    <View style={[styles.statProgressBar, { width: `${Math.min((entries.length / 50) * 100, 100)}%`, backgroundColor: '#ef4444' }]} />
+                  </View>
+                  <Text style={styles.statSubtext}>
+                    {entries.length >= 50 ? 'Master level!' : `${50 - entries.length} to master`}
+                  </Text>
+                </LinearGradient>
               </View>
-              <Text style={styles.statNumber}>{entries.length}</Text>
-              <Text style={styles.statLabel}>Total Entries</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${Math.min((entries.length / 50) * 100, 100)}%`, backgroundColor: '#ef4444' }]} />
+              
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={gradientColors.green}
+                  style={styles.statGradient}
+                >
+                  <View style={styles.statIconContainer}>
+                    <Target size={24} color="#10b981" />
+                  </View>
+                  <Text style={styles.statNumber}>{getStreakCount()}</Text>
+                  <Text style={styles.statLabel}>Day Streak</Text>
+                  <View style={styles.statProgress}>
+                    <View style={[styles.statProgressBar, { width: `${Math.min((getStreakCount() / 30) * 100, 100)}%`, backgroundColor: '#10b981' }]} />
+                  </View>
+                  <Text style={styles.statSubtext}>
+                    {getStreakCount() >= 30 ? 'Legendary!' : `${30 - getStreakCount()} to legend`}
+                  </Text>
+                </LinearGradient>
               </View>
-              <Text style={styles.statSubtext}>
-                {entries.length >= 50 ? 'Master level!' : `${50 - entries.length} to master`}
-              </Text>
-            </LinearGradient>
+              
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#faf5ff', '#f3e8ff']}
+                  style={styles.statGradient}
+                >
+                  <View style={styles.statIconContainer}>
+                    <TrendingUp size={24} color="#8b5cf6" />
+                  </View>
+                  <Text style={styles.statNumber}>
+                    {getAverageMood().toFixed(1)}
+                  </Text>
+                  <Text style={styles.statLabel}>Avg Mood</Text>
+                  <View style={styles.statProgress}>
+                    <View style={[styles.statProgressBar, { width: `${(getAverageMood() / 5) * 100}%`, backgroundColor: '#8b5cf6' }]} />
+                  </View>
+                  <Text style={styles.statSubtext}>
+                    {getAverageMood() >= 4 ? 'Excellent!' : getAverageMood() >= 3 ? 'Good' : 'Improving'}
+                  </Text>
+                </LinearGradient>
+              </View>
+            </View>
           </View>
-          
-          <View style={styles.statCard}>
-            <LinearGradient
-              colors={gradientColors.green}
-              style={styles.statGradient}
-            >
-              <View style={styles.statIconContainer}>
-                <Target size={24} color="#10b981" />
-              </View>
-              <Text style={styles.statNumber}>{getStreakCount()}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${Math.min((getStreakCount() / 30) * 100, 100)}%`, backgroundColor: '#10b981' }]} />
-              </View>
-              <Text style={styles.statSubtext}>
-                {getStreakCount() >= 30 ? 'Legendary!' : `${30 - getStreakCount()} to legend`}
-              </Text>
-            </LinearGradient>
-          </View>
-          
-          <View style={styles.statCard}>
-            <LinearGradient
-              colors={['#faf5ff', '#f3e8ff']}
-              style={styles.statGradient}
-            >
-              <View style={styles.statIconContainer}>
-                <TrendingUp size={24} color="#8b5cf6" />
-              </View>
-              <Text style={styles.statNumber}>
-                {getAverageMood().toFixed(1)}
-              </Text>
-              <Text style={styles.statLabel}>Avg Mood</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${(getAverageMood() / 5) * 100}%`, backgroundColor: '#8b5cf6' }]} />
-              </View>
-              <Text style={styles.statSubtext}>
-                {getAverageMood() >= 4 ? 'Excellent!' : getAverageMood() >= 3 ? 'Good' : 'Improving'}
-              </Text>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+        </View>
 
         {/* Dynamic Insight Card */}
-        <Animated.View entering={FadeInDown.delay(400)} style={styles.insightCardContainer}>
+        <View style={styles.insightCardContainer}>
           <LinearGradient
             colors={insightCard.color as [ColorValue, ColorValue]}
             style={styles.insightCard}
@@ -531,11 +531,11 @@ export default function HomeContent() {
               {insightCard.description}
             </Text>
           </LinearGradient>
-        </Animated.View>
+        </View>
 
         {/* Weekly Summary (Pro Feature) with Enhanced Design */}
         {subscription.plan === 'pro' && (
-          <Animated.View entering={FadeInDown.delay(500)} style={styles.summaryCard}>
+          <View style={styles.summaryCard}>
             <LinearGradient
               colors={['#f0f9ff', '#e0f2fe']}
               style={styles.summaryGradient}
@@ -555,11 +555,11 @@ export default function HomeContent() {
                 <ArrowRight size={16} color="#0ea5e9" />
               </TouchableOpacity>
             </LinearGradient>
-          </Animated.View>
+          </View>
         )}
 
         {/* Recent Entries with Enhanced Design */}
-        <Animated.View entering={FadeInDown.delay(600)} style={styles.recentSection}>
+        <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Reflections</Text>
             <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/all-entries')}>
@@ -571,9 +571,8 @@ export default function HomeContent() {
           {entries.slice(0, 3).map((entry, index) => {
             const habits = parseHabits(entry.habits);
             return (
-              <Animated.View 
+              <View 
                 key={entry.id} 
-                entering={FadeInDown.delay(700 + index * 100)}
                 style={styles.recentEntry}
               >
                 <View style={styles.recentEntryDate}>
@@ -631,12 +630,12 @@ export default function HomeContent() {
                 <TouchableOpacity style={styles.recentEntryAction}>
                   <ArrowRight size={16} color="#9ca3af" />
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
             );
           })}
           
           {entries.length === 0 && (
-            <Animated.View entering={FadeInDown.delay(700)} style={styles.emptyStateContainer}>
+            <View style={styles.emptyStateContainer}>
               <View style={styles.emptyStateIcon}>
                 <Calendar size={48} color="#d1d5db" />
               </View>
@@ -652,9 +651,9 @@ export default function HomeContent() {
                   <Text style={styles.emptyStateButtonText}>Create First Entry</Text>
                 </LinearGradient>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           )}
-        </Animated.View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -673,7 +672,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   scrollContent: {
-    paddingBottom: Platform.OS === 'ios' ? 32 : 48,
+    paddingTop: 24,
+    paddingBottom: 48,
   },
   headerContainer: {
     marginBottom: 24,
@@ -775,32 +775,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#ffffff',
   },
-  entryCardContainer: {
-    marginHorizontal: 20,
-    marginBottom: 24,
+  contentSections: {
+    flex: 1,
+    gap: 18,
   },
-  entryCard: {
+  entrySection: {
+    paddingHorizontal: 20,
+  },
+  todayCard: {
+    backgroundColor: '#fff',
     borderRadius: 20,
-    overflow: 'hidden',
+    padding: 36,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
+    marginBottom: 8,
+    minHeight: 200,
   },
-  entryCardGradient: {
-    padding: 24,
-  },
-  entryCardHeader: {
+  todayCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  entryCardTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 12,
     gap: 8,
+  },
+  todayCardContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   cardTitle: {
     fontSize: 18,
@@ -820,10 +823,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: '#667eea',
-  },
-  entryPreview: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
   },
   moodDisplayContainer: {
     alignItems: 'center',
@@ -877,9 +876,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#475569',
   },
+  addEntrySection: {
+    paddingHorizontal: 20,
+  },
   addEntryCard: {
     borderRadius: 20,
     overflow: 'hidden',
+    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -918,12 +921,17 @@ const styles = StyleSheet.create({
   addEntryArrow: {
     opacity: 0.8,
   },
+  statsSection: {
+    paddingHorizontal: 20,
+    minHeight: 200,
+  },
   statsContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 20,
     gap: 12,
-    marginTop: 20,
+    marginTop: 0,
+    marginBottom: 0,
   },
   statCard: {
     flex: 1,

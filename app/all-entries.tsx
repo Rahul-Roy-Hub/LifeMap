@@ -53,6 +53,7 @@ function AllEntriesContent() {
             <TouchableOpacity
               key={entry.id}
               style={styles.entryCard}
+              onPress={() => router.push(`/entry-detail?id=${entry.id}`)}
             >
               <Text style={styles.entryDate}>
                 {formatDate(entry.created_at)} - {entry.mood_emoji}
