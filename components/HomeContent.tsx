@@ -453,7 +453,7 @@ export default function HomeContent() {
           )}
         </Animated.View>
 
-        {/* Enhanced Stats Grid with Better Visual Hierarchy */}
+        <View style={{ height: 32 }} />
         <Animated.View entering={SlideInRight.delay(300)} style={styles.statsContainer}>
           <View style={styles.statCard}>
             <LinearGradient
