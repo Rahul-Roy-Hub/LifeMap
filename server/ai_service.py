@@ -538,6 +538,68 @@ def test_dappier():
             'error_type': type(e).__name__
         }), 500
 
+@app.route('/api/test-dappier-raw', methods=['GET'])
+def test_dappier_raw():
+    """
+    Test endpoint that bypasses dappier's error handling to see the actual HTTP response
+    """
+    try:
+        import httpx
+        import json
+        
+        # Get the API key
+        api_key = os.getenv("DAPPIER_API_KEY")
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'DAPPIER_API_KEY not found'
+            }), 500
+        
+        # Make the request directly to see the actual response
+        base_url = "https://api.dappier.com/"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        test_query = "Hello, this is a test"
+        request_data = {"query": test_query}
+        ai_model_id = "am_01j06ytn18ejftedz6dyhz2b15"
+        
+        logger.info(f"Making direct request to: {base_url}app/aimodel/{ai_model_id}")
+        logger.info(f"Headers: {headers}")
+        logger.info(f"Request data: {request_data}")
+        
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                url=f"{base_url}app/aimodel/{ai_model_id}",
+                headers=headers,
+                json=request_data
+            )
+            
+            logger.info(f"Response status: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            logger.info(f"Response text: {response.text}")
+            
+            return jsonify({
+                'success': True,
+                'request_url': f"{base_url}app/aimodel/{ai_model_id}",
+                'request_data': request_data,
+                'response_status': response.status_code,
+                'response_headers': dict(response.headers),
+                'response_text': response.text,
+                'response_json': response.json() if response.status_code == 200 else None
+            })
+            
+    except Exception as e:
+        logger.error(f"Raw test error: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__
+        }), 500
+
 if __name__ == '__main__':
     logger.info("Starting server on port 5000")
     app.run(host='0.0.0.0', port=5000, debug=True) 
