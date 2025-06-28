@@ -24,12 +24,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Initialize Dappier
-try:
-    dappier = Dappier()
-    logger.info("Dappier client initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize Dappier client: {str(e)}")
-    dappier = None
+dappier = Dappier()
 
 LIFEMAP_SYSTEM_PROMPT = """
 You are LifeMap AI Coach – a supportive, friendly, and reflective personal growth assistant.
@@ -352,50 +347,19 @@ def chat():
         else:
             # Handle regular chat message using Dappier
             try:
-                if dappier is None:
-                    logger.error("Dappier client is not initialized")
-                    return jsonify({
-                        'success': False,
-                        'error': 'Dappier service is not available. Please check API key configuration.'
-                    }), 500
-                
-                logger.info(f"Sending query to Dappier: {user_message}")
-                
-                # Try to get the raw response first for debugging
-                try:
-                    raw_response = dappier.search_real_time_data(
-                        query=user_message,
-                        ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
-                    )
-                    logger.info(f"Dappier raw response: {raw_response}")
-                    
-                    if raw_response is None:
-                        logger.error("Dappier returned None response")
-                        return jsonify({
-                            'success': False,
-                            'error': 'Dappier API returned no response. Please check your API key and try again.'
-                        }), 500
-                    
-                    response = raw_response.message
-                except Exception as raw_error:
-                    logger.error(f"Dappier raw call failed: {str(raw_error)}")
-                    # Fallback to string method
-                    response = dappier.search_real_time_data_string(
-                        query=user_message,
-                        ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
-                    )
-                
-                logger.info(f"Dappier response received: {response}")
+                response = dappier.search_real_time_data_string(
+                    query=user_message,
+                    ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
+                )
                 return jsonify({
                     'success': True,
                     'result': response
                 })
             except Exception as e:
                 logger.error(f"Dappier chat error: {str(e)}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
                 return jsonify({
                     'success': False,
-                    'error': f'Failed to process chat message: {str(e)}'
+                    'error': 'Failed to process chat message'
                 }), 500
 
         # Fallback for any unhandled case
@@ -466,139 +430,6 @@ def weather():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/debug', methods=['GET'])
-def debug_info():
-    """
-    Debug endpoint to check environment variables and service status
-    """
-    try:
-        debug_info = {
-            'dappier_api_key_set': bool(os.getenv("DAPPIER_API_KEY")),
-            'dappier_api_key_length': len(os.getenv("DAPPIER_API_KEY", "")),
-            'dappier_client_initialized': dappier is not None,
-            'supabase_url_set': bool(os.getenv("SUPABASE_URL")),
-            'supabase_key_set': bool(os.getenv("SUPABASE_SERVICE_KEY")),
-            'environment_variables': {
-                'DAPPIER_API_KEY': '***' if os.getenv("DAPPIER_API_KEY") else 'NOT_SET',
-                'SUPABASE_URL': os.getenv("SUPABASE_URL", 'NOT_SET'),
-                'SUPABASE_SERVICE_KEY': '***' if os.getenv("SUPABASE_SERVICE_KEY") else 'NOT_SET'
-            }
-        }
-        
-        return jsonify({
-            'success': True,
-            'debug_info': debug_info
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in debug endpoint: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/test-dappier', methods=['GET'])
-def test_dappier():
-    """
-    Test endpoint to make a real dappier API call and see detailed error information
-    """
-    try:
-        if dappier is None:
-            return jsonify({
-                'success': False,
-                'error': 'Dappier client is not initialized'
-            }), 500
-        
-        # Test with a simple query
-        test_query = "Hello, this is a test"
-        logger.info(f"Testing dappier with query: {test_query}")
-        
-        # Make the actual API call
-        response = dappier.search_real_time_data_string(
-            query=test_query,
-            ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
-        )
-        
-        logger.info(f"Dappier test response: {response}")
-        
-        return jsonify({
-            'success': True,
-            'test_query': test_query,
-            'response': response,
-            'response_length': len(response) if response else 0
-        })
-        
-    except Exception as e:
-        logger.error(f"Dappier test error: {str(e)}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'error_type': type(e).__name__
-        }), 500
-
-@app.route('/api/test-dappier-raw', methods=['GET'])
-def test_dappier_raw():
-    """
-    Test endpoint that bypasses dappier's error handling to see the actual HTTP response
-    """
-    try:
-        import httpx
-        import json
-        
-        # Get the API key
-        api_key = os.getenv("DAPPIER_API_KEY")
-        if not api_key:
-            return jsonify({
-                'success': False,
-                'error': 'DAPPIER_API_KEY not found'
-            }), 500
-        
-        # Make the request directly to see the actual response
-        base_url = "https://api.dappier.com/"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        test_query = "Hello, this is a test"
-        request_data = {"query": test_query}
-        ai_model_id = "am_01j06ytn18ejftedz6dyhz2b15"
-        
-        logger.info(f"Making direct request to: {base_url}app/aimodel/{ai_model_id}")
-        logger.info(f"Headers: {headers}")
-        logger.info(f"Request data: {request_data}")
-        
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                url=f"{base_url}app/aimodel/{ai_model_id}",
-                headers=headers,
-                json=request_data
-            )
-            
-            logger.info(f"Response status: {response.status_code}")
-            logger.info(f"Response headers: {dict(response.headers)}")
-            logger.info(f"Response text: {response.text}")
-            
-            return jsonify({
-                'success': True,
-                'request_url': f"{base_url}app/aimodel/{ai_model_id}",
-                'request_data': request_data,
-                'response_status': response.status_code,
-                'response_headers': dict(response.headers),
-                'response_text': response.text,
-                'response_json': response.json() if response.status_code == 200 else None
-            })
-            
-    except Exception as e:
-        logger.error(f"Raw test error: {str(e)}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'error_type': type(e).__name__
-        }), 500
 
 if __name__ == '__main__':
     logger.info("Starting server on port 5000")
