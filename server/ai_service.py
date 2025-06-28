@@ -360,10 +360,31 @@ def chat():
                     }), 500
                 
                 logger.info(f"Sending query to Dappier: {user_message}")
-                response = dappier.search_real_time_data_string(
-                    query=user_message,
-                    ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
-                )
+                
+                # Try to get the raw response first for debugging
+                try:
+                    raw_response = dappier.search_real_time_data(
+                        query=user_message,
+                        ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
+                    )
+                    logger.info(f"Dappier raw response: {raw_response}")
+                    
+                    if raw_response is None:
+                        logger.error("Dappier returned None response")
+                        return jsonify({
+                            'success': False,
+                            'error': 'Dappier API returned no response. Please check your API key and try again.'
+                        }), 500
+                    
+                    response = raw_response.message
+                except Exception as raw_error:
+                    logger.error(f"Dappier raw call failed: {str(raw_error)}")
+                    # Fallback to string method
+                    response = dappier.search_real_time_data_string(
+                        query=user_message,
+                        ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
+                    )
+                
                 logger.info(f"Dappier response received: {response}")
                 return jsonify({
                     'success': True,
@@ -475,6 +496,46 @@ def debug_info():
         return jsonify({
             'success': False,
             'error': str(e)
+        }), 500
+
+@app.route('/api/test-dappier', methods=['GET'])
+def test_dappier():
+    """
+    Test endpoint to make a real dappier API call and see detailed error information
+    """
+    try:
+        if dappier is None:
+            return jsonify({
+                'success': False,
+                'error': 'Dappier client is not initialized'
+            }), 500
+        
+        # Test with a simple query
+        test_query = "Hello, this is a test"
+        logger.info(f"Testing dappier with query: {test_query}")
+        
+        # Make the actual API call
+        response = dappier.search_real_time_data_string(
+            query=test_query,
+            ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
+        )
+        
+        logger.info(f"Dappier test response: {response}")
+        
+        return jsonify({
+            'success': True,
+            'test_query': test_query,
+            'response': response,
+            'response_length': len(response) if response else 0
+        })
+        
+    except Exception as e:
+        logger.error(f"Dappier test error: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__
         }), 500
 
 if __name__ == '__main__':
