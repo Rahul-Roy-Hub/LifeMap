@@ -24,7 +24,12 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Initialize Dappier
-dappier = Dappier()
+try:
+    dappier = Dappier()
+    logger.info("Dappier client initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Dappier client: {str(e)}")
+    dappier = None
 
 LIFEMAP_SYSTEM_PROMPT = """
 You are LifeMap AI Coach – a supportive, friendly, and reflective personal growth assistant.
@@ -347,19 +352,29 @@ def chat():
         else:
             # Handle regular chat message using Dappier
             try:
+                if dappier is None:
+                    logger.error("Dappier client is not initialized")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Dappier service is not available. Please check API key configuration.'
+                    }), 500
+                
+                logger.info(f"Sending query to Dappier: {user_message}")
                 response = dappier.search_real_time_data_string(
                     query=user_message,
                     ai_model_id="am_01j06ytn18ejftedz6dyhz2b15"
                 )
+                logger.info(f"Dappier response received: {response}")
                 return jsonify({
                     'success': True,
                     'result': response
                 })
             except Exception as e:
                 logger.error(f"Dappier chat error: {str(e)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 return jsonify({
                     'success': False,
-                    'error': 'Failed to process chat message'
+                    'error': f'Failed to process chat message: {str(e)}'
                 }), 500
 
         # Fallback for any unhandled case
@@ -430,6 +445,37 @@ def weather():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug', methods=['GET'])
+def debug_info():
+    """
+    Debug endpoint to check environment variables and service status
+    """
+    try:
+        debug_info = {
+            'dappier_api_key_set': bool(os.getenv("DAPPIER_API_KEY")),
+            'dappier_api_key_length': len(os.getenv("DAPPIER_API_KEY", "")),
+            'dappier_client_initialized': dappier is not None,
+            'supabase_url_set': bool(os.getenv("SUPABASE_URL")),
+            'supabase_key_set': bool(os.getenv("SUPABASE_SERVICE_KEY")),
+            'environment_variables': {
+                'DAPPIER_API_KEY': '***' if os.getenv("DAPPIER_API_KEY") else 'NOT_SET',
+                'SUPABASE_URL': os.getenv("SUPABASE_URL", 'NOT_SET'),
+                'SUPABASE_SERVICE_KEY': '***' if os.getenv("SUPABASE_SERVICE_KEY") else 'NOT_SET'
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in debug endpoint: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     logger.info("Starting server on port 5000")
