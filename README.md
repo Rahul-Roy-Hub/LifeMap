@@ -1,8 +1,8 @@
 # LifeMap - Personal Growth Journaling App
 
-A beautiful, feature-rich journaling app built with React Native (Expo) and Supabase that helps users track their personal growth journey through daily reflections, mood tracking, habit building, and AI-powered insights.
+A beautiful, feature-rich journaling app built with React Native (Expo) and Supabase that helps users track their personal growth journey through daily reflections, mood tracking, and AI-powered insights.
 
-## 🌟 Implemented Features
+## 🌟 Features
 
 ### 🔐 Authentication & User Management
 - Email/password authentication via Supabase Auth
@@ -14,7 +14,6 @@ A beautiful, feature-rich journaling app built with React Native (Expo) and Supa
 ### 📝 Journaling & Entry Management
 - Daily journal entries with mood tracking (1-5 scale with emojis)
 - Rich text input for detailed reflections
-- Habit tracking with JSON storage
 - Entry editing and management
 - All entries view with search and filtering
 - Responsive design for mobile and tablet
@@ -23,16 +22,13 @@ A beautiful, feature-rich journaling app built with React Native (Expo) and Supa
 - AI Coach integration via Flask backend (deployed on Render)
 - Chat interface for personalized guidance
 - Weekly summary generation with mood analysis
-- Habit completion insights and recommendations
-- Dappier API integration for enhanced AI capabilities
 - Pro feature gating for AI insights
+- Dappier API integration for enhanced AI capabilities
 
 ### 📊 Analytics & Insights
 - Mood trends and analytics visualization
-- Habit completion tracking with pie charts
 - Weekly summaries with detailed breakdowns
 - Productivity tracking and analysis
-- Goal progress monitoring
 
 ### 💎 Subscription & Monetization
 - RevenueCat integration for subscription management
@@ -43,7 +39,6 @@ A beautiful, feature-rich journaling app built with React Native (Expo) and Supa
 
 ### 🎨 UI/UX & Design
 - Modern, clean design with smooth animations
-- Dark/light theme support (automatic)
 - Responsive layout for all screen sizes
 - Micro-interactions and haptic feedback
 - Linear gradients and modern styling
@@ -113,34 +108,6 @@ CREATE TABLE journal_entries (
 );
 ```
 
-### Goals Table
-```sql
-CREATE TABLE goals (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT NOT NULL CHECK (status IN ('not_started', 'in_progress', 'completed')),
-  target_date TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-### Habits Table
-```sql
-CREATE TABLE habits (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  description TEXT,
-  frequency TEXT NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly')),
-  completed BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
 ## 📁 Project Structure
 
 ```
@@ -189,38 +156,6 @@ CREATE TABLE habits (
     └── env.d.ts          # Environment types
 ```
 
-## 🔑 Key Implementation Details
-
-### Authentication Flow
-- Automatic session management with Supabase Auth
-- Profile creation on first login
-- Protected routes with authentication checks
-- Cross-platform session persistence
-
-### Real-time Updates
-- Live synchronization of journal entries
-- Instant updates across devices
-- Optimistic UI updates for better UX
-
-### AI Integration
-- Flask backend deployed on Render
-- Dappier API for enhanced AI capabilities
-- Weekly summary generation with mood analysis
-- Personalized coaching and insights
-- Error handling and fallback responses
-
-### Subscription Management
-- RevenueCat integration for mobile platforms
-- Free tier with entry limitations
-- Pro feature gating with AI insights
-- Custom domain support for Pro users
-- Web platform compatibility considerations
-
-### Responsive Design
-- Mobile-first approach with tablet optimization
-- Adaptive components for different screen sizes
-- Platform-specific optimizations (iOS/Android/Web)
-
 ## 🚀 Deployment
 
 ### Backend Deployment (Render)
@@ -243,7 +178,7 @@ npm run build:web
 1. Configure app.json for your target platforms
 2. Build with EAS Build:
 ```bash
-eas build --platform all
+eas build --platform android
 ```
 
 ## 🔧 Environment Setup
@@ -321,15 +256,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, email support@lifemap.app or join our Discord community.
-
-## 🔄 Recent Updates
-
-- Complete AI integration with Flask backend
-- RevenueCat subscription management
-- Enhanced UI with animations and gradients
-- Comprehensive database schema with goals and habits
-- Cross-platform compatibility (iOS, Android, Web)
-- Real-time data synchronization
-- Weekly summary generation with insights
-- Profile management with image upload
-- Responsive design for all screen sizes
